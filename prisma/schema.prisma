@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  walletAddress String     @unique
+  strategies    Strategy[]
+  bets          Bet[]
+  createdAt     DateTime   @default(now())
+}
+
+model Strategy {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  name          String
+  isActive      Boolean  @default(true)
+  minConfidence Float    @default(0.65)
+  maxBetAmount  Float    @default(10.0)
+  dailyBudget   Float    @default(50.0)
+  autoExecute   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Analysis {
+  id          String   @id @default(cuid())
+  marketId    String
+  conditionId String
+  homeTeam    String
+  awayTeam    String
+  gameDate    DateTime
+  homeWinProb Float
+  awayWinProb Float
+  confidence  Float
+  reasoning   String
+  nbaData     String
+  marketPrice Float
+  edgePercent Float
+  createdAt   DateTime @default(now())
+  bets        Bet[]
+}
+
+model Bet {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  analysisId String
+  analysis   Analysis  @relation(fields: [analysisId], references: [id])
+  tokenId    String
+  side       String
+  outcome    String
+  amount     Float
+  price      Float
+  orderId    String?
+  status     String    @default("pending")
+  pnl        Float?
+  txHash     String?
+  createdAt  DateTime  @default(now())
+  settledAt  DateTime?
+}
