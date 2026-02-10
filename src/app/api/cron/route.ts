@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { scanAndAnalyze, executeAutoStrategy } from "@/lib/strategy-engine";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // Cron endpoint - triggered by node-cron or external scheduler
 export async function POST(request: NextRequest) {
   try {

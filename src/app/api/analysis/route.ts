@@ -7,6 +7,8 @@ import {
 } from "@/lib/polymarket";
 import { runAnalysis } from "@/lib/ai-analyzer";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

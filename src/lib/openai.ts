@@ -211,7 +211,16 @@ export async function analyzeGame(
   if (jsonStart === -1 || jsonEnd === -1) {
     throw new Error(`Failed to parse AI response as JSON: ${cleaned.slice(0, 200)}`);
   }
-  const jsonStr = cleaned.slice(jsonStart, jsonEnd + 1);
+  let jsonStr = cleaned.slice(jsonStart, jsonEnd + 1);
+
+  // Remove control characters that break JSON.parse (tabs, newlines, etc. inside string values)
+  // eslint-disable-next-line no-control-regex
+  jsonStr = jsonStr.replace(/[\x00-\x1f\x7f]/g, (ch) => {
+    if (ch === "\n") return "\\n";
+    if (ch === "\r") return "\\r";
+    if (ch === "\t") return "\\t";
+    return "";
+  });
 
   const parsed = JSON.parse(jsonStr);
 

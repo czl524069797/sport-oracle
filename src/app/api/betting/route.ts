@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { placeBet } from "@/lib/bet-executor";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const PK_USER_WALLET = "pk-user";
 
 const betSchema = z.object({

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const strategySchema = z.object({
   walletAddress: z.string().min(1),
   name: z.string().min(1).max(100),
