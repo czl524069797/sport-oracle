@@ -102,5 +102,5 @@ export async function getDailySpent(userId: string): Promise<number> {
     },
   });
 
-  return bets.reduce((sum, bet) => sum + bet.amount, 0);
+  return bets.reduce((sum: number, bet) => sum + bet.amount, 0);
 }
