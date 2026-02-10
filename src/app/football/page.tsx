@@ -22,7 +22,7 @@ function FootballIcon({ size = 24, className = "" }: { size?: number; className?
 }
 
 export default function FootballPage() {
-  const { events, loading, error, refresh } = usePolymarketEvents("football");
+  const { matches, events, loading, error, refresh } = usePolymarketEvents("football");
   const { markets: overviewMarkets, loading: overviewLoading, error: overviewError } = useOverview("football");
   const { t } = useI18n();
 
@@ -94,7 +94,7 @@ export default function FootballPage() {
         </div>
       </div>
 
-      <EventList events={events} loading={loading} error={error} theme="football"
+      <EventList events={events} matches={matches} loading={loading} error={error} theme="football"
         emptyIcon={<FootballIcon size={40} className="text-emerald-400" />} />
     </div>
   );

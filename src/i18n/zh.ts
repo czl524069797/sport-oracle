@@ -135,6 +135,12 @@ const zh = {
     todayLabel: "今日比赛",
     tomorrowLabel: "明日比赛",
     etDate: "美东",
+    polymarketOdds: "Polymarket 盘口",
+    moneyline: "独赢",
+    spread: "让分",
+    overUnderLine: "大小分",
+    over: "大",
+    under: "小",
   },
 
   // Analysis
@@ -233,6 +239,17 @@ const zh = {
     matchOdds: "比赛赔率",
     eventMarkets: "赛事市场",
     vs: "VS",
+    aiAnalyze: "AI 分析",
+    viewDetails: "查看详情",
+    moneyline: "独赢",
+    spread: "让分",
+    overUnder: "大小分",
+    over: "大",
+    under: "小",
+    draw: "平局",
+    noMatches: "暂无近期比赛",
+    noMatchesHint: "Polymarket 上暂无单场比赛市场，请稍后再来",
+    recentMatches: "近期比赛",
   },
 
   // Overview (season-level)

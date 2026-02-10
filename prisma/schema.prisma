@@ -27,6 +27,8 @@ model Strategy {
   autoExecute   Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([userId, isActive])
 }
 
 model Analysis {
@@ -45,6 +47,9 @@ model Analysis {
   edgePercent Float
   createdAt   DateTime @default(now())
   bets        Bet[]
+
+  @@index([marketId])
+  @@index([createdAt])
 }
 
 model Bet {
@@ -64,4 +69,7 @@ model Bet {
   txHash     String?
   createdAt  DateTime  @default(now())
   settledAt  DateTime?
+
+  @@index([userId, createdAt])
+  @@index([status])
 }

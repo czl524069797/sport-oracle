@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getFootballEvents } from "@/lib/polymarket-events";
+import { getFootballMatchesAndEvents } from "@/lib/polymarket-events";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const events = await getFootballEvents(10);
-    return NextResponse.json({ success: true, data: { events } });
+    const { matches, events } = await getFootballMatchesAndEvents(20);
+    return NextResponse.json({ success: true, data: { matches, events } });
   } catch (error) {
     console.error("[/api/football] Error:", error);
     return NextResponse.json(

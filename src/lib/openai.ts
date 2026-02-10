@@ -227,38 +227,42 @@ export async function analyzeGame(
   }
   let jsonStr = cleaned.slice(jsonStart, jsonEnd + 1);
 
-  // Remove control characters that break JSON.parse (tabs, newlines, etc. inside string values)
+  // Only strip truly problematic control characters (NUL, etc.).
+  // Do NOT replace \n, \r, \t — they are valid JSON whitespace outside strings
   // eslint-disable-next-line no-control-regex
-  jsonStr = jsonStr.replace(/[\x00-\x1f\x7f]/g, (ch) => {
-    if (ch === "\n") return "\\n";
-    if (ch === "\r") return "\\r";
-    if (ch === "\t") return "\\t";
-    return "";
-  });
+  jsonStr = jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "");
 
-  const parsed = JSON.parse(jsonStr);
+  try {
+    const parsed = JSON.parse(jsonStr);
 
-  return {
-    homeWinProbability: parsed.home_win_probability,
-    awayWinProbability: parsed.away_win_probability,
-    confidence: parsed.confidence,
-    confidenceExplanation: parsed.confidence_explanation ?? "",
-    keyFactors: parsed.key_factors ?? [],
-    reasoning: parsed.reasoning ?? "",
-    newsHighlights: parsed.news_highlights ?? [],
-    spreadAnalysis: {
-      favoredTeam: parsed.spread_analysis?.favored_team ?? "home",
-      spreadValue: parsed.spread_analysis?.spread_value ?? 0,
-      spreadConfidence: parsed.spread_analysis?.spread_confidence ?? 0,
-      coverRecommendation: parsed.spread_analysis?.cover_recommendation ?? "none",
-    },
-    totalPointsAnalysis: {
-      predictedTotal: parsed.total_points_analysis?.predicted_total ?? 0,
-      overUnderLine: parsed.total_points_analysis?.over_under_line ?? 0,
-      overProbability: parsed.total_points_analysis?.over_probability ?? 0,
-      underProbability: parsed.total_points_analysis?.under_probability ?? 0,
-      ouConfidence: parsed.total_points_analysis?.ou_confidence ?? 0,
-      recommendation: parsed.total_points_analysis?.recommendation ?? "none",
-    },
-  };
+    return {
+      homeWinProbability: parsed.home_win_probability,
+      awayWinProbability: parsed.away_win_probability,
+      confidence: parsed.confidence,
+      confidenceExplanation: parsed.confidence_explanation ?? "",
+      keyFactors: parsed.key_factors ?? [],
+      reasoning: parsed.reasoning ?? "",
+      newsHighlights: parsed.news_highlights ?? [],
+      spreadAnalysis: {
+        favoredTeam: parsed.spread_analysis?.favored_team ?? "home",
+        spreadValue: parsed.spread_analysis?.spread_value ?? 0,
+        spreadConfidence: parsed.spread_analysis?.spread_confidence ?? 0,
+        coverRecommendation: parsed.spread_analysis?.cover_recommendation ?? "none",
+      },
+      totalPointsAnalysis: {
+        predictedTotal: parsed.total_points_analysis?.predicted_total ?? 0,
+        overUnderLine: parsed.total_points_analysis?.over_under_line ?? 0,
+        overProbability: parsed.total_points_analysis?.over_probability ?? 0,
+        underProbability: parsed.total_points_analysis?.under_probability ?? 0,
+        ouConfidence: parsed.total_points_analysis?.ou_confidence ?? 0,
+        recommendation: parsed.total_points_analysis?.recommendation ?? "none",
+      },
+    };
+  } catch (parseError) {
+    console.error("[openai] JSON parse failed. jsonStr first 1000 chars:", jsonStr.slice(0, 1000));
+    console.error("[openai] JSON parse error:", parseError);
+    throw new Error(
+      `Failed to parse AI JSON response: ${parseError instanceof Error ? parseError.message : "Unknown parse error"}. Content starts with: ${jsonStr.slice(0, 100)}`
+    );
+  }
 }

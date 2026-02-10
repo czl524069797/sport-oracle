@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
 import { Providers } from "./providers";
 import { AppHeader, AppFooter } from "@/components/layout/AppShell";
+import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -29,6 +31,9 @@ export default function RootLayout({
     <html lang="zh" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>
+          <Suspense fallback={null}>
+            <NavigationProgress />
+          </Suspense>
           <div className="min-h-screen flex flex-col bg-grid relative">
             {/* Background radial glow */}
             <div className="fixed inset-0 bg-gradient-radial from-neon-cyan/[0.02] via-transparent to-transparent pointer-events-none" />

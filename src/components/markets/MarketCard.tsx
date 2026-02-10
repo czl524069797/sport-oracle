@@ -173,6 +173,54 @@ export function MarketCard({ matched, onAnalyze, analyzing, analysisSummary }: M
           </div>
         </div>
 
+        {/* Polymarket single-game odds */}
+        {matched.gameOdds && (
+          <div className="mb-4 p-2.5 rounded-lg bg-secondary/30 border border-neon-cyan/10 text-xs">
+            <p className="text-[10px] font-medium text-neon-cyan/80 uppercase tracking-wider mb-2">{t.markets.polymarketOdds}</p>
+            <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">{t.markets.moneyline}:</span>
+                <span className="font-semibold text-neon-cyan">{Math.round(matched.gameOdds.moneylineHome * 100)}%</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="font-semibold text-neon-orange">{Math.round(matched.gameOdds.moneylineAway * 100)}%</span>
+              </div>
+              {matched.gameOdds.spread && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t.markets.spread}:</span>
+                  <span className="font-semibold text-foreground">
+                    {matched.gameOdds.spreadPrice ? `${Math.round(matched.gameOdds.spreadPrice * 100)}%` : "-"}
+                  </span>
+                </div>
+              )}
+              {matched.gameOdds.overUnder !== undefined && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t.markets.overUnderLine}:</span>
+                  <span className="font-semibold text-neon-purple">{matched.gameOdds.overUnder}</span>
+                  {matched.gameOdds.overPrice !== undefined && matched.gameOdds.underPrice !== undefined && (
+                    <>
+                      <span className="text-muted-foreground">({t.markets.over}</span>
+                      <span className="font-semibold text-neon-green">{Math.round(matched.gameOdds.overPrice * 100)}%</span>
+                      <span className="text-muted-foreground">/ {t.markets.under}</span>
+                      <span className="font-semibold text-neon-orange">{Math.round(matched.gameOdds.underPrice * 100)}%</span>
+                      <span className="text-muted-foreground">)</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            {matched.gameOdds.polymarketUrl && (
+              <a
+                href={matched.gameOdds.polymarketUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-neon-cyan/60 hover:text-neon-cyan transition-colors mt-1.5 inline-block"
+              >
+                Polymarket &rarr;
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Analysis data row */}
         {analysisSummary && (
           <div className="flex items-center justify-between mb-4 p-2.5 rounded-lg bg-secondary/40 border border-border text-xs">

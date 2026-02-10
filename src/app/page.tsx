@@ -1,6 +1,7 @@
 "use client";
 
 import { useAccount } from "wagmi";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState, useCallback } from "react";
 import type { DashboardStats, ApiResponse, BetRecord } from "@/types";
@@ -234,7 +235,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <a href="/markets" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-cyan/30 hover:bg-neon-cyan/5 transition-all duration-200">
+            <Link href="/markets" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-cyan/30 hover:bg-neon-cyan/5 transition-all duration-200 active:scale-[0.98]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-foreground group-hover:text-neon-cyan transition-colors">{t.dashboard.browseMarkets}</p>
@@ -244,8 +245,8 @@ export default function DashboardPage() {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
-            </a>
-            <a href="/strategy" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-orange/30 hover:bg-neon-orange/5 transition-all duration-200">
+            </Link>
+            <Link href="/strategy" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-orange/30 hover:bg-neon-orange/5 transition-all duration-200 active:scale-[0.98]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-foreground group-hover:text-neon-orange transition-colors">{t.dashboard.configStrategy}</p>
@@ -255,8 +256,8 @@ export default function DashboardPage() {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
-            </a>
-            <a href="/history" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-purple/30 hover:bg-neon-purple/5 transition-all duration-200">
+            </Link>
+            <Link href="/history" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-purple/30 hover:bg-neon-purple/5 transition-all duration-200 active:scale-[0.98]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-foreground group-hover:text-neon-purple transition-colors">{t.dashboard.viewHistory}</p>
@@ -266,7 +267,7 @@ export default function DashboardPage() {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
-            </a>
+            </Link>
           </CardContent>
         </Card>
 

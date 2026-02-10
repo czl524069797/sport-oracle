@@ -20,6 +20,7 @@ export async function runAnalysis(
   // Use championship prices as proxy for team strength market signal
   const homePrice = homeOdds.championshipPrice;
   const awayPrice = awayOdds.championshipPrice;
+  const homePriceNum = typeof homePrice === "string" ? parseFloat(homePrice) || 0 : (homePrice ?? 0);
 
   // Fetch all NBA data in parallel
   const [homeStats, awayStats, homePlayers, awayPlayers, h2h] =
@@ -58,7 +59,7 @@ export async function runAnalysis(
     homeTeam: game.homeTeam.teamName,
     awayTeam: game.awayTeam.teamName,
     gameDate: game.gameDate,
-    marketPrice: homePrice,
+    marketPrice: homePriceNum,
     edgePercent: 0,
     recommendedSide: "none",
     recommendedOutcome: "YES",
@@ -84,7 +85,7 @@ export async function runAnalysis(
         newsHighlights: aiResult.newsHighlights,
       }),
       nbaData: JSON.stringify(analysisInput),
-      marketPrice: result.marketPrice,
+      marketPrice: homePriceNum,
       edgePercent: 0,
     },
   });

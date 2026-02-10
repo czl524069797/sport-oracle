@@ -7,7 +7,8 @@ import {
 import {
   getNBASeasonMarkets,
   buildTeamOddsMap,
-  enrichGamesWithOdds,
+  enrichGamesWithAllOdds,
+  getNBAGameMarkets,
 } from "@/lib/polymarket";
 
 function getDateInTimezone(tz: string): string {
@@ -32,17 +33,13 @@ function buildLabels(userTz: string, allFinished: boolean) {
   const userDateStr = getDateInTimezone(userTz);
   const etDisplay = formatETDate();
 
-  // If user's local date is ahead of ET date, the NBA "today" is user's "yesterday"
-  // but the games are still "current" — label them with ET date for clarity
   const userIsAhead = userDateStr > etDateStr;
 
   let todayLabel: string;
   let tomorrowLabel: string;
 
   if (userIsAhead) {
-    // User's timezone is ahead (e.g., Asia/Shanghai), NBA "today" may already be user's "tomorrow"
     todayLabel = `ET ${etDisplay}`;
-    // Calculate ET tomorrow date
     const etTomorrow = new Date();
     etTomorrow.setDate(etTomorrow.getDate() + 1);
     const etTomorrowDisplay = etTomorrow.toLocaleDateString("en-US", {
@@ -64,16 +61,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userTz = searchParams.get("tz") ?? "America/New_York";
 
-    // Always fetch today, tomorrow, and season markets in parallel
-    const [todayGames, tomorrowGames, seasonMarkets] = await Promise.all([
+    // Fetch all data in parallel: today games, tomorrow games, season markets, single-game markets
+    const [todayGames, tomorrowGames, seasonMarkets, gameOddsMap] = await Promise.all([
       getTodayGames(),
       getTomorrowGames(),
       getNBASeasonMarkets(),
+      getNBAGameMarkets(),
     ]);
 
     const oddsMap = buildTeamOddsMap(seasonMarkets);
-    const todayWithOdds = enrichGamesWithOdds(todayGames, oddsMap);
-    const tomorrowWithOdds = enrichGamesWithOdds(tomorrowGames, oddsMap);
+    const todayWithOdds = enrichGamesWithAllOdds(todayGames, oddsMap, gameOddsMap);
+    const tomorrowWithOdds = enrichGamesWithAllOdds(tomorrowGames, oddsMap, gameOddsMap);
     const allTodayFinished = areTodayGamesFinished(todayGames);
 
     const labels = buildLabels(userTz, allTodayFinished);

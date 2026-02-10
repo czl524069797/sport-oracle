@@ -3,10 +3,15 @@
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/i18n";
 import { getTeamLink } from "@/lib/team-links";
-import type { PolymarketEvent } from "@/types";
+import type { PolymarketEvent, PolymarketMatch } from "@/types";
 
 interface EventCardProps {
   event: PolymarketEvent;
+  theme: "football" | "esports";
+}
+
+interface MatchCardProps {
+  match: PolymarketMatch;
   theme: "football" | "esports";
 }
 
@@ -28,6 +33,10 @@ const themeConfig = {
     secondaryBorderAccent: "border-amber-500/15",
     buttonBg: "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400",
     buttonShadow: "shadow-[0_0_12px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)]",
+    aiButtonBg: "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400",
+    aiButtonShadow: "shadow-[0_0_12px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]",
+    drawColor: "text-slate-300",
+    drawBg: "bg-slate-500/10",
   },
   esports: {
     borderColor: "border-violet-500/15",
@@ -46,6 +55,10 @@ const themeConfig = {
     secondaryBorderAccent: "border-rose-500/15",
     buttonBg: "bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-400 hover:to-purple-400",
     buttonShadow: "shadow-[0_0_12px_rgba(139,92,246,0.3)] hover:shadow-[0_0_20px_rgba(139,92,246,0.5)]",
+    aiButtonBg: "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400",
+    aiButtonShadow: "shadow-[0_0_12px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]",
+    drawColor: "text-slate-300",
+    drawBg: "bg-slate-500/10",
   },
 };
 
@@ -90,8 +103,173 @@ function TeamLink({
 }
 
 /**
+ * MatchCard: displays a single VS match with odds, spread, O/U, draw, and AI analyze button.
+ */
+export function MatchCard({ match, theme }: MatchCardProps) {
+  const { t } = useI18n();
+  const cfg = themeConfig[theme];
+  const { odds } = match;
+
+  const homePct = Math.round(odds.homeWin * 100);
+  const awayPct = Math.round(odds.awayWin * 100);
+  const drawPct = odds.draw ? Math.round(odds.draw * 100) : null;
+
+  return (
+    <div className={`glass-card rounded-xl overflow-hidden transition-all duration-300 ${cfg.borderColor} ${cfg.hoverBorder}`}>
+      {/* Top accent line */}
+      <div className={`h-0.5 ${cfg.progressBg}`} />
+
+      <div className="p-5">
+        {/* Title + volume + date */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
+              {match.event.title}
+            </h3>
+            {match.matchDate && (
+              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                </svg>
+                {new Date(match.matchDate).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          <Badge className={`shrink-0 text-[10px] ${cfg.tagColor}`}>
+            {formatVolume(match.event.volume)}
+          </Badge>
+        </div>
+
+        {/* VS Matchup Layout */}
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 mb-4">
+          {/* Home team */}
+          <div className={`text-center p-3 rounded-lg border ${cfg.borderAccent} ${cfg.accentBg}`}>
+            <TeamLink
+              name={match.homeTeam}
+              category={theme}
+              eventTitle={match.event.title}
+              className={`text-sm font-semibold ${cfg.accentColor}`}
+            />
+            <div className="mt-2 space-y-1.5">
+              <span className={`text-lg font-bold ${cfg.accentColor}`}>{homePct}%</span>
+              <p className="text-[10px] text-muted-foreground">{t.events.moneyline}</p>
+              <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${cfg.progressBg}`}
+                  style={{ width: `${homePct}%`, boxShadow: cfg.progressShadow }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* VS divider */}
+          <div className="flex flex-col items-center justify-center px-1">
+            <span className="text-xs font-bold text-muted-foreground bg-secondary/80 rounded-full w-8 h-8 flex items-center justify-center border border-border">
+              {t.events.vs}
+            </span>
+          </div>
+
+          {/* Away team */}
+          <div className={`text-center p-3 rounded-lg border ${cfg.secondaryBorderAccent} ${cfg.secondaryBg}`}>
+            <TeamLink
+              name={match.awayTeam}
+              category={theme}
+              eventTitle={match.event.title}
+              className={`text-sm font-semibold ${cfg.secondaryAccent}`}
+            />
+            <div className="mt-2 space-y-1.5">
+              <span className={`text-lg font-bold ${cfg.secondaryAccent}`}>{awayPct}%</span>
+              <p className="text-[10px] text-muted-foreground">{t.events.moneyline}</p>
+              <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${cfg.secondaryProgressBg}`}
+                  style={{ width: `${awayPct}%`, boxShadow: cfg.secondaryProgressShadow }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Odds info row: Draw + Spread + O/U */}
+        <div className="flex items-center flex-wrap gap-2 mb-4 text-xs">
+          {drawPct !== null && (
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-slate-500/15 ${cfg.drawBg}`}>
+              <span className="text-muted-foreground">{t.events.draw}:</span>
+              <span className={`font-semibold ${cfg.drawColor}`}>{drawPct}%</span>
+            </div>
+          )}
+          {odds.spread && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-md border border-border bg-secondary/30">
+              <span className="text-muted-foreground">{t.events.spread}:</span>
+              <span className="font-semibold text-foreground truncate max-w-[120px]">
+                {odds.spreadPrice ? `${Math.round(odds.spreadPrice * 100)}%` : "-"}
+              </span>
+            </div>
+          )}
+          {odds.overUnder !== undefined && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-md border border-border bg-secondary/30">
+              <span className="text-muted-foreground">{t.events.overUnder}:</span>
+              <span className="font-semibold text-foreground">{odds.overUnder}</span>
+              {odds.overPrice !== undefined && odds.underPrice !== undefined && (
+                <span className="text-muted-foreground ml-1">
+                  ({t.events.over} {Math.round(odds.overPrice * 100)}% / {t.events.under} {Math.round(odds.underPrice * 100)}%)
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Additional markets summary */}
+        {match.event.markets.length > 1 && (
+          <div className="flex items-center gap-1.5 mb-3 text-[10px] text-muted-foreground">
+            <span>+{match.event.markets.length - 1} {t.events.eventMarkets}</span>
+          </div>
+        )}
+
+        {/* Action buttons: AI Analyze + View on Polymarket */}
+        <div className="flex gap-2 mb-3">
+          <a
+            href={match.polymarketUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex-1 text-center py-2.5 rounded-lg text-white text-sm font-semibold transition-all ${cfg.aiButtonBg} ${cfg.aiButtonShadow} flex items-center justify-center gap-1.5`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+            </svg>
+            {t.events.aiAnalyze}
+          </a>
+          <a
+            href={match.polymarketUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex-1 text-center py-2.5 rounded-lg text-white text-sm font-semibold transition-all ${cfg.buttonBg} ${cfg.buttonShadow}`}
+          >
+            {t.events.viewOnPolymarket}
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <span className="text-[10px] text-muted-foreground">
+            {match.event.markets.length} {t.events.markets}
+          </span>
+          {match.event.endDate && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              {new Date(match.event.endDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Detect if an event is a 2-team matchup (VS-style).
- * Criteria: has at least 1 market with exactly 2 outcomes.
  */
 function isVsMatchup(event: PolymarketEvent): boolean {
   if (!event.markets || event.markets.length === 0) return false;
@@ -117,11 +295,9 @@ function VsMatchupCard({ event, theme }: EventCardProps) {
 
   return (
     <div className={`glass-card rounded-xl overflow-hidden transition-all duration-300 ${cfg.borderColor} ${cfg.hoverBorder}`}>
-      {/* Top accent line */}
       <div className={`h-0.5 ${cfg.progressBg}`} />
 
       <div className="p-5">
-        {/* Title + volume */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1">
             {event.title}
@@ -131,64 +307,42 @@ function VsMatchupCard({ event, theme }: EventCardProps) {
           </Badge>
         </div>
 
-        {/* VS Matchup Layout */}
         <div className="grid grid-cols-[1fr_auto_1fr] gap-2 mb-4">
-          {/* Team 1 */}
           <div className={`text-center p-3 rounded-lg border ${cfg.borderAccent} ${cfg.accentBg}`}>
-            <TeamLink
-              name={displayName1}
-              category={theme}
-              eventTitle={event.title}
-              className={`text-sm font-semibold ${cfg.accentColor}`}
-            />
+            <TeamLink name={displayName1} category={theme} eventTitle={event.title} className={`text-sm font-semibold ${cfg.accentColor}`} />
             <div className="mt-2 space-y-1.5">
               <span className={`text-lg font-bold ${cfg.accentColor}`}>{pct1}%</span>
               <p className="text-[10px] text-muted-foreground">{t.events.odds}</p>
               <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${cfg.progressBg}`}
-                  style={{ width: `${pct1}%`, boxShadow: cfg.progressShadow }}
-                />
+                <div className={`h-full rounded-full ${cfg.progressBg}`} style={{ width: `${pct1}%`, boxShadow: cfg.progressShadow }} />
               </div>
             </div>
           </div>
 
-          {/* VS divider */}
           <div className="flex flex-col items-center justify-center px-1">
             <span className="text-xs font-bold text-muted-foreground bg-secondary/80 rounded-full w-8 h-8 flex items-center justify-center border border-border">
               {t.events.vs}
             </span>
           </div>
 
-          {/* Team 2 */}
           <div className={`text-center p-3 rounded-lg border ${cfg.secondaryBorderAccent} ${cfg.secondaryBg}`}>
-            <TeamLink
-              name={displayName2}
-              category={theme}
-              eventTitle={event.title}
-              className={`text-sm font-semibold ${cfg.secondaryAccent}`}
-            />
+            <TeamLink name={displayName2} category={theme} eventTitle={event.title} className={`text-sm font-semibold ${cfg.secondaryAccent}`} />
             <div className="mt-2 space-y-1.5">
               <span className={`text-lg font-bold ${cfg.secondaryAccent}`}>{pct2}%</span>
               <p className="text-[10px] text-muted-foreground">{t.events.odds}</p>
               <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${cfg.secondaryProgressBg}`}
-                  style={{ width: `${pct2}%`, boxShadow: cfg.secondaryProgressShadow }}
-                />
+                <div className={`h-full rounded-full ${cfg.secondaryProgressBg}`} style={{ width: `${pct2}%`, boxShadow: cfg.secondaryProgressShadow }} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Additional markets summary */}
         {event.markets.length > 1 && (
           <div className="flex items-center gap-1.5 mb-3 text-[10px] text-muted-foreground">
             <span>+{event.markets.length - 1} {t.events.eventMarkets}</span>
           </div>
         )}
 
-        {/* View on Polymarket button */}
         <a
           href={polymarketUrl}
           target="_blank"
@@ -198,7 +352,6 @@ function VsMatchupCard({ event, theme }: EventCardProps) {
           {t.events.viewOnPolymarket}
         </a>
 
-        {/* Footer */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
           <span className="text-[10px] text-muted-foreground">
             {event.markets.length} {t.events.markets}
@@ -226,11 +379,9 @@ function MultiOutcomeCard({ event, theme }: EventCardProps) {
 
   return (
     <div className={`glass-card rounded-xl overflow-hidden transition-all duration-300 ${cfg.borderColor} ${cfg.hoverBorder}`}>
-      {/* Top accent line */}
       <div className={`h-0.5 ${cfg.progressBg}`} />
 
       <div className="p-5">
-        {/* Title + volume */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1">
             {event.title}
@@ -240,14 +391,12 @@ function MultiOutcomeCard({ event, theme }: EventCardProps) {
           </Badge>
         </div>
 
-        {/* Primary market question */}
         {topMarket && (
           <p className="text-xs text-muted-foreground mb-3 line-clamp-1">
             {topMarket.question}
           </p>
         )}
 
-        {/* Outcomes with probability bars */}
         {hasOutcomes && (
           <div className="space-y-2 mb-4">
             {topMarket.outcomes.slice(0, 4).map((outcome, i) => {
@@ -288,7 +437,6 @@ function MultiOutcomeCard({ event, theme }: EventCardProps) {
           </div>
         )}
 
-        {/* View on Polymarket button */}
         <a
           href={polymarketUrl}
           target="_blank"
@@ -298,7 +446,6 @@ function MultiOutcomeCard({ event, theme }: EventCardProps) {
           {t.events.viewOnPolymarket}
         </a>
 
-        {/* Footer: markets count + date */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
           <span className="text-[10px] text-muted-foreground">
             {event.markets.length} {t.events.markets}

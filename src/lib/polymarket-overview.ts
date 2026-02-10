@@ -1,7 +1,10 @@
 import type { FuturesMarket, FuturesOutcome } from "@/types";
+import { cached } from "@/lib/cache";
 
 const GAMMA_URL =
   process.env.POLYMARKET_GAMMA_URL ?? "https://gamma-api.polymarket.com";
+
+const TEN_MINUTES = 10 * 60 * 1000;
 
 interface GammaEvent {
   id: string;
@@ -122,20 +125,22 @@ const NBA_FUTURES_SLUGS = [
 ];
 
 export async function getNBAOverview(): Promise<FuturesMarket[]> {
-  const results = await Promise.all(
-    NBA_FUTURES_SLUGS.map((slug) => fetchFuturesBySlug(slug, 5))
-  );
-  return results.filter((r): r is FuturesMarket => r !== null);
+  return cached("overview:nba", async () => {
+    const results = await Promise.all(
+      NBA_FUTURES_SLUGS.map((slug) => fetchFuturesBySlug(slug, 5))
+    );
+    return results.filter((r): r is FuturesMarket => r !== null);
+  }, TEN_MINUTES);
 }
 
 // ====== Football Season Overview ======
 // tag_id=100350 for soccer; we pick events with 15+ markets (futures, not single matches)
 export async function getFootballOverview(): Promise<FuturesMarket[]> {
-  return fetchFuturesByTagVolume("100350", 15, 6, 5);
+  return cached("overview:football", () => fetchFuturesByTagVolume("100350", 15, 6, 5), TEN_MINUTES);
 }
 
 // ====== Esports Season Overview ======
 // tag_id=64 for esports; pick events with 10+ markets
 export async function getEsportsOverview(): Promise<FuturesMarket[]> {
-  return fetchFuturesByTagVolume("64", 10, 4, 5);
+  return cached("overview:esports", () => fetchFuturesByTagVolume("64", 10, 4, 5), TEN_MINUTES);
 }

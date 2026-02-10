@@ -100,6 +100,12 @@ const en: Translations = {
     todayLabel: "Today's Games",
     tomorrowLabel: "Tomorrow's Games",
     etDate: "ET",
+    polymarketOdds: "Polymarket Odds",
+    moneyline: "Moneyline",
+    spread: "Spread",
+    overUnderLine: "O/U",
+    over: "Over",
+    under: "Under",
   },
 
   analysis: {
@@ -191,6 +197,17 @@ const en: Translations = {
     matchOdds: "Match Odds",
     eventMarkets: "Event Markets",
     vs: "VS",
+    aiAnalyze: "AI Analyze",
+    viewDetails: "View Details",
+    moneyline: "Moneyline",
+    spread: "Spread",
+    overUnder: "O/U",
+    over: "Over",
+    under: "Under",
+    draw: "Draw",
+    noMatches: "No upcoming matches",
+    noMatchesHint: "No individual match markets found. Check back later",
+    recentMatches: "Recent Matches",
   },
 
   overview: {

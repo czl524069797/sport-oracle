@@ -1,45 +1,52 @@
 import type { NBAGame, TeamStats, PlayerStats, HeadToHead } from "@/types";
+import { cached } from "@/lib/cache";
 
 const NBA_SERVICE_URL =
   process.env.NBA_SERVICE_URL ?? "http://localhost:8000";
 
+const FIVE_MINUTES = 5 * 60 * 1000;
+
 export async function getTodayGames(): Promise<NBAGame[]> {
-  try {
-    const res = await fetch(`${NBA_SERVICE_URL}/api/schedule/today`, {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) {
-      console.error(`[nba-data] getTodayGames failed: ${res.status}`);
+  return cached("nba:today", async () => {
+    try {
+      const res = await fetch(`${NBA_SERVICE_URL}/api/schedule/today`, {
+        next: { revalidate: 300 },
+      });
+      if (!res.ok) {
+        console.error(`[nba-data] getTodayGames failed: ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      return data.games ?? [];
+    } catch (error) {
+      console.error("[nba-data] getTodayGames connection error:", error instanceof Error ? error.message : error);
       return [];
     }
-    const data = await res.json();
-    return data.games ?? [];
-  } catch (error) {
-    console.error("[nba-data] getTodayGames connection error:", error instanceof Error ? error.message : error);
-    return [];
-  }
+  }, FIVE_MINUTES);
 }
 
 export async function getTomorrowGames(): Promise<NBAGame[]> {
-  try {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().split("T")[0];
-    const res = await fetch(
-      `${NBA_SERVICE_URL}/api/schedule/upcoming?days=2`,
-      { next: { revalidate: 600 } }
-    );
-    if (!res.ok) {
-      console.error(`[nba-data] getTomorrowGames failed: ${res.status}`);
+  return cached("nba:tomorrow", async () => {
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = tomorrow.toISOString().split("T")[0];
+      const res = await fetch(
+        `${NBA_SERVICE_URL}/api/schedule/upcoming?days=2`,
+        { next: { revalidate: 600 } }
+      );
+      if (!res.ok) {
+        console.error(`[nba-data] getTomorrowGames failed: ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      const games: NBAGame[] = data.games ?? [];
+      return games.filter((g) => g.gameDate === dateStr);
+    } catch (error) {
+      console.error("[nba-data] getTomorrowGames connection error:", error instanceof Error ? error.message : error);
       return [];
     }
-    const data = await res.json();
-    const games: NBAGame[] = data.games ?? [];
-    return games.filter((g) => g.gameDate === dateStr);
-  } catch (error) {
-    console.error("[nba-data] getTomorrowGames connection error:", error instanceof Error ? error.message : error);
-    return [];
-  }
+  }, FIVE_MINUTES);
 }
 
 export function areTodayGamesFinished(games: NBAGame[]): boolean {

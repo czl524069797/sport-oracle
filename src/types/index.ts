@@ -99,6 +99,7 @@ export interface GameWithOdds {
   game: NBAGame;
   homeOdds: TeamMarketOdds;
   awayOdds: TeamMarketOdds;
+  gameOdds?: NBAGameOdds;
 }
 
 // ============= AI Analysis Types =============
@@ -275,6 +276,46 @@ export interface FuturesOutcome {
 export interface CategoryOverview {
   category: "nba" | "football" | "esports";
   markets: FuturesMarket[];
+}
+
+// ============= Match Odds Types (Football / Esports / NBA single-game) =============
+
+export interface MatchOdds {
+  homeWin: number;
+  awayWin: number;
+  draw?: number;
+  spread?: string;
+  spreadPrice?: number;
+  overUnder?: number;
+  overPrice?: number;
+  underPrice?: number;
+}
+
+export interface PolymarketMatch {
+  event: PolymarketEvent;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string;
+  odds: MatchOdds;
+  polymarketUrl: string;
+}
+
+export interface MatchesResponse {
+  matches: PolymarketMatch[];
+  events: PolymarketEvent[];
+}
+
+// ============= NBA Single-Game Odds =============
+
+export interface NBAGameOdds {
+  moneylineHome: number;
+  moneylineAway: number;
+  spread?: string;
+  spreadPrice?: number;
+  overUnder?: number;
+  overPrice?: number;
+  underPrice?: number;
+  polymarketUrl?: string;
 }
 
 // ============= API Response =============

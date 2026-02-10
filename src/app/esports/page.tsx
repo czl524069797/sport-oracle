@@ -21,7 +21,7 @@ function GamepadIcon({ size = 24, className = "" }: { size?: number; className?:
 }
 
 export default function EsportsPage() {
-  const { events, loading, error, refresh } = usePolymarketEvents("esports");
+  const { matches, events, loading, error, refresh } = usePolymarketEvents("esports");
   const { markets: overviewMarkets, loading: overviewLoading, error: overviewError } = useOverview("esports");
   const { t } = useI18n();
 
@@ -93,7 +93,7 @@ export default function EsportsPage() {
         </div>
       </div>
 
-      <EventList events={events} loading={loading} error={error} theme="esports"
+      <EventList events={events} matches={matches} loading={loading} error={error} theme="esports"
         emptyIcon={<GamepadIcon size={40} className="text-violet-400" />} />
     </div>
   );
