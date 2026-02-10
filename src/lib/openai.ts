@@ -124,25 +124,51 @@ interface ChatResponse {
 }
 
 /**
- * Read an SSE stream and concatenate all delta.content chunks.
+ * Read an SSE stream text and concatenate all delta.content chunks.
  */
-async function readSSEStream(response: Response): Promise<string> {
-  const text = await response.text();
+function extractSSEContent(text: string): string {
   let content = "";
-
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed.startsWith("data: ") || trimmed === "data: [DONE]") continue;
     try {
       const chunk: ChatResponse = JSON.parse(trimmed.slice(6));
-      const delta = chunk.choices?.[0]?.delta?.content;
+      // Support both streaming (delta) and non-streaming (message) formats
+      const delta = chunk.choices?.[0]?.delta?.content ?? chunk.choices?.[0]?.message?.content;
       if (delta) content += delta;
     } catch {
       // Skip unparseable lines
     }
   }
-
   return content;
+}
+
+/**
+ * Parse raw response text — handles both SSE streams and standard JSON.
+ */
+function extractContent(text: string): string {
+  const trimmed = text.trim();
+
+  // If it starts with "data: " it's an SSE stream
+  if (trimmed.startsWith("data: ")) {
+    return extractSSEContent(text);
+  }
+
+  // Try parsing as standard OpenAI JSON response
+  try {
+    const data: ChatResponse = JSON.parse(trimmed);
+    if (data.error) {
+      throw new Error(`AI API error: ${data.error.message ?? data.error.code}`);
+    }
+    return data.choices?.[0]?.message?.content ?? "";
+  } catch (e) {
+    // If JSON parse failed, maybe it's SSE without the expected prefix on first line
+    // (some proxies add extra headers or blank lines before SSE data)
+    if (text.includes("data: ")) {
+      return extractSSEContent(text);
+    }
+    throw e;
+  }
 }
 
 export async function analyzeGame(
@@ -154,7 +180,7 @@ export async function analyzeGame(
 
   const url = `${BASE_URL.replace(/\/+$/, "")}/chat/completions`;
 
-  const body = {
+  const requestBody = {
     model: MODEL,
     messages: [
       { role: "system", content: SYSTEM_PROMPT + langSuffix },
@@ -171,7 +197,7 @@ export async function analyzeGame(
       "Content-Type": "application/json",
       Authorization: `Bearer ${API_KEY}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   });
 
   if (!res.ok) {
@@ -179,24 +205,12 @@ export async function analyzeGame(
     throw new Error(`AI API error ${res.status}: ${errText}`);
   }
 
-  // Detect SSE streaming vs regular JSON response
-  const contentType = res.headers.get("content-type") ?? "";
-  let content: string;
-
-  if (contentType.includes("text/event-stream") || contentType.includes("text/plain")) {
-    // SSE stream — collect all chunks
-    content = await readSSEStream(res);
-  } else {
-    // Standard JSON response
-    const data: ChatResponse = await res.json();
-    if (data.error) {
-      throw new Error(`AI API error: ${data.error.message ?? data.error.code}`);
-    }
-    content = data.choices?.[0]?.message?.content ?? "";
-  }
+  // Always read as text first, then intelligently parse
+  const rawText = await res.text();
+  const content = extractContent(rawText);
 
   if (!content) {
-    throw new Error("Empty response from AI");
+    throw new Error(`Empty response from AI. Raw (first 300 chars): ${rawText.slice(0, 300)}`);
   }
 
   // Strip markdown code fences if present
