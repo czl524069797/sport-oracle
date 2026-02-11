@@ -318,6 +318,37 @@ export interface NBAGameOdds {
   polymarketUrl?: string;
 }
 
+// ============= Match Analysis Types (Football / Esports) =============
+
+export interface MatchAnalysisWithEdge {
+  matchId: string;
+  category: "football" | "esports";
+  homeTeam: string;
+  awayTeam: string;
+  homeWinProbability: number;
+  awayWinProbability: number;
+  drawProbability?: number; // Football only
+  confidence: number;
+  keyFactors: string[];
+  reasoning: string;
+  goalDifferenceAnalysis?: {
+    predictedGoalDiff: number;
+    overUnderGoals?: number;
+  };
+  mapAnalysis?: {
+    predictedMaps: number;
+  }; // Esports only
+  marketOdds: MatchOdds;
+  edgePercent: number;
+  recommendedSide: "home" | "away" | "draw" | "none";
+}
+
+export interface MatchAnalysisInput {
+  match: PolymarketMatch;
+  category: "football" | "esports";
+  locale: string;
+}
+
 // ============= API Response =============
 
 export interface ApiResponse<T> {

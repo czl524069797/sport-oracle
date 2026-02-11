@@ -185,6 +185,41 @@ const en: Translations = {
     bannerDesc: "League of Legends - CS2 - Valorant - Dota 2 - Hot prediction markets",
   },
 
+  // Football Analysis (WhoScored/Dongqiudi style)
+  footballAnalysis: {
+    title: "AI Football Analysis",
+    threeWay: "Three-Way (1X2)",
+    homeWin: "Home Win",
+    draw: "Draw",
+    awayWin: "Away Win",
+    goalDifference: "Goal Difference Analysis",
+    predictedGoalDiff: "Predicted Goal Diff",
+    totalGoals: "Total Goals (O/U)",
+    recentForm: "Recent Form",
+    h2hRecord: "H2H Record",
+    injuryList: "Injury List",
+  },
+
+  // Esports Analysis (op.gg style)
+  esportsAnalysis: {
+    title: "AI Esports Analysis",
+    matchWinner: "Match Winner",
+    mapAnalysis: "Map Analysis",
+    predictedMaps: "Predicted Maps",
+    teamStats: "Team Stats",
+    recentMatches: "Recent Matches",
+  },
+
+  // Match Analysis (shared)
+  matchAnalysis: {
+    title: "AI Match Analysis",
+    analyzing: "AI is analyzing the match...",
+    confidence: "Confidence",
+    marketEdge: "Market Edge",
+    keyFactors: "Key Factors",
+    reasoning: "AI Reasoning",
+  },
+
   events: {
     refresh: "Refresh",
     refreshing: "Refreshing...",
