@@ -70,13 +70,84 @@ function formatVolume(vol: number): string {
   return `$${vol.toFixed(0)}`;
 }
 
+/**
+ * Normalize team name by removing common suffixes like FC, CF, AFC, SC, etc.
+ */
+function normalizeTeamName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    // Remove common football suffixes
+    .replace(/\s+(fc|cf|afc|sc|ssc|ac|as|rc|rcd|cd|ud|sd|real|sporting|athletic|club|united|city|town|county|rovers|wanderers|hotspur|albion)$/gi, "")
+    .replace(/^(fc|cf|afc|sc|real|sporting|athletic|club)\s+/gi, "")
+    .trim();
+}
+
+/**
+ * Translate team/outcome name with fuzzy matching
+ */
 function translateOutcomeName(name: string, t: ReturnType<typeof useI18n>["t"], locale: string): string {
   if (locale !== "zh") return name;
-  const key = name.toLowerCase().trim();
+
   const overviewMap = t.overview?.outcomeNames as Record<string, string> | undefined;
+
+  // Try exact match first
+  const key = name.toLowerCase().trim();
   if (overviewMap && overviewMap[key]) return overviewMap[key];
   if (t.teams[name]) return t.teams[name];
+
+  // Try normalized match (remove FC, CF, etc.)
+  const normalized = normalizeTeamName(name);
+  if (overviewMap && overviewMap[normalized]) return overviewMap[normalized];
+
+  // Try partial match - find if any key contains or is contained in the normalized name
+  if (overviewMap) {
+    for (const [dictKey, dictValue] of Object.entries(overviewMap)) {
+      const normalizedDictKey = normalizeTeamName(dictKey);
+      if (normalizedDictKey === normalized ||
+          normalized.includes(normalizedDictKey) ||
+          normalizedDictKey.includes(normalized)) {
+        return dictValue;
+      }
+    }
+  }
+
   return name;
+}
+
+/**
+ * Translate match title (e.g., "LoL: Invictus Gaming vs Oh My God (BO5) - LPL" -> "英雄联盟 IG vs OMG")
+ */
+function translateMatchTitle(title: string, t: ReturnType<typeof useI18n>["t"], locale: string, theme: "football" | "esports"): string {
+  if (locale !== "zh") return title;
+
+  const overviewMap = t.overview?.outcomeNames as Record<string, string> | undefined;
+  if (!overviewMap) return title;
+
+  let result = title;
+
+  // Translate game prefixes for esports
+  if (theme === "esports") {
+    result = result
+      .replace(/^LoL:/i, "英雄联盟:")
+      .replace(/^League of Legends:/i, "英雄联盟:")
+      .replace(/^CS2:/i, "CS2:")
+      .replace(/^CSGO:/i, "CS:")
+      .replace(/^Counter-Strike 2:/i, "CS2:")
+      .replace(/^Valorant:/i, "Valorant:")
+      .replace(/^Dota 2:/i, "Dota 2:")
+      .replace(/^DOTA2:/i, "Dota 2:");
+  }
+
+  // Replace team names in the title
+  for (const [dictKey, dictValue] of Object.entries(overviewMap)) {
+    // Create regex to match team name with word boundaries
+    const escapedKey = dictKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`\\b${escapedKey}\\b`, "gi");
+    result = result.replace(regex, dictValue);
+  }
+
+  return result;
 }
 
 function TeamLink({
@@ -120,6 +191,7 @@ export function MatchCard({ match, theme }: MatchCardProps) {
   // Translate team names for i18n
   const homeTeamDisplay = translateOutcomeName(match.homeTeam, t, locale);
   const awayTeamDisplay = translateOutcomeName(match.awayTeam, t, locale);
+  const titleDisplay = translateMatchTitle(match.event.title, t, locale, theme);
 
   const isFootball = theme === "football";
 
@@ -133,7 +205,7 @@ export function MatchCard({ match, theme }: MatchCardProps) {
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
-              {match.event.title}
+              {titleDisplay}
             </h3>
             {match.matchDate && (
               <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
@@ -364,6 +436,7 @@ function VsMatchupCard({ event, theme }: EventCardProps) {
 
   const displayName1 = translateOutcomeName(team1, t, locale);
   const displayName2 = translateOutcomeName(team2, t, locale);
+  const titleDisplay = translateMatchTitle(event.title, t, locale, theme);
 
   const polymarketUrl = `https://polymarket.com/event/${event.slug}`;
 
@@ -374,7 +447,7 @@ function VsMatchupCard({ event, theme }: EventCardProps) {
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1">
-            {event.title}
+            {titleDisplay}
           </h3>
           <Badge className={`shrink-0 text-[10px] ${cfg.tagColor}`}>
             {formatVolume(event.volume)}
@@ -450,6 +523,7 @@ function MultiOutcomeCard({ event, theme }: EventCardProps) {
   const topMarket = event.markets[0];
   const hasOutcomes = topMarket && topMarket.outcomes.length >= 2 && topMarket.outcomePrices.length >= 2;
   const polymarketUrl = `https://polymarket.com/event/${event.slug}`;
+  const titleDisplay = translateMatchTitle(event.title, t, locale, theme);
 
   return (
     <div className={`glass-card rounded-xl overflow-hidden transition-all duration-300 ${cfg.borderColor} ${cfg.hoverBorder}`}>
@@ -458,7 +532,7 @@ function MultiOutcomeCard({ event, theme }: EventCardProps) {
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1">
-            {event.title}
+            {titleDisplay}
           </h3>
           <Badge className={`shrink-0 text-[10px] ${cfg.tagColor}`}>
             {formatVolume(event.volume)}
