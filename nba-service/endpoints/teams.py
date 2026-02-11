@@ -6,13 +6,13 @@ from nba_api.stats.endpoints import (
 )
 from nba_api.stats.static import teams as nba_teams
 from services.cache import timed_cache
-from typing import Any
+from typing import Any, Dict
 
 router = APIRouter()
 
 
 @timed_cache(seconds=600)
-def _get_team_stats(team_id: int) -> dict[str, Any]:
+def _get_team_stats(team_id: int) -> Dict[str, Any]:
     """Fetch team dashboard stats."""
     try:
         dashboard = teamdashboardbygeneralsplits.TeamDashboardByGeneralSplits(
@@ -70,7 +70,7 @@ async def team_stats(team_id: int):
 
 
 @timed_cache(seconds=600)
-def _get_head_to_head(home_id: int, away_id: int) -> dict[str, Any]:
+def _get_head_to_head(home_id: int, away_id: int) -> Dict[str, Any]:
     """Get head-to-head record between two teams this season."""
     try:
         finder = leaguegamefinder.LeagueGameFinder(

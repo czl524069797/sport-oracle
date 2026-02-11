@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from nba_api.stats.endpoints import teamplayerdashboard
 from services.cache import timed_cache
-from typing import Any
+from typing import Any, Dict, List
 
 router = APIRouter()
 
 
 @timed_cache(seconds=600)
-def _get_team_players(team_id: int) -> list[dict[str, Any]]:
+def _get_team_players(team_id: int) -> List[Dict[str, Any]]:
     """Fetch team player statistics."""
     try:
         dashboard = teamplayerdashboard.TeamPlayerDashboard(

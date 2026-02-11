@@ -1,9 +1,9 @@
 from functools import wraps
 from cachetools import TTLCache
-from typing import Callable, Any
+from typing import Callable, Any, Dict, Optional
 
 # Global cache store
-_caches: dict[str, TTLCache] = {}
+_caches: Dict[str, TTLCache] = {}
 
 
 def timed_cache(seconds: int = 300, maxsize: int = 128) -> Callable:
@@ -26,7 +26,7 @@ def timed_cache(seconds: int = 300, maxsize: int = 128) -> Callable:
     return decorator
 
 
-def clear_cache(func_name: str | None = None) -> None:
+def clear_cache(func_name: Optional[str] = None) -> None:
     """Clear cache for a specific function or all caches."""
     if func_name and func_name in _caches:
         _caches[func_name].clear()

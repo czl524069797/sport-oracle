@@ -2,7 +2,7 @@ from nba_api.stats.endpoints import scoreboardv2, leaguestandingsv3
 from nba_api.stats.static import teams as nba_teams
 from datetime import datetime, timedelta
 from services.cache import timed_cache
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 
 def _current_season() -> str:
@@ -13,7 +13,7 @@ def _current_season() -> str:
 
 
 @timed_cache(seconds=3600)
-def _get_standings_map() -> dict[int, dict[str, str]]:
+def _get_standings_map() -> Dict[int, Dict[str, str]]:
     """Get current season standings as a teamId -> {record, home, road} map."""
     try:
         standings = leaguestandingsv3.LeagueStandingsV3(
@@ -22,7 +22,7 @@ def _get_standings_map() -> dict[int, dict[str, str]]:
         )
         data = standings.get_normalized_dict()
         rows = data.get("Standings", [])
-        result: dict[int, dict[str, str]] = {}
+        result: Dict[int, Dict[str, str]] = {}
         for row in rows:
             team_id = row.get("TeamID", 0)
             wins = row.get("WINS", 0)
@@ -37,13 +37,13 @@ def _get_standings_map() -> dict[int, dict[str, str]]:
         return {}
 
 
-def _get_team_records(team_id: int, standings: dict[int, dict[str, str]]) -> dict[str, str]:
+def _get_team_records(team_id: int, standings: Dict[int, Dict[str, str]]) -> Dict[str, str]:
     """Get team records from standings map."""
     return standings.get(team_id, {"record": "", "home": "", "road": ""})
 
 
 @timed_cache(seconds=300)
-def get_today_scoreboard() -> list[dict[str, Any]]:
+def get_today_scoreboard() -> List[Dict[str, Any]]:
     """Get today's NBA games from the scoreboard."""
     today = datetime.now().strftime("%Y-%m-%d")
     try:
@@ -101,7 +101,7 @@ def get_today_scoreboard() -> list[dict[str, Any]]:
     return games
 
 
-def find_team_by_id(team_id: int) -> dict[str, Any] | None:
+def find_team_by_id(team_id: int) -> Optional[Dict[str, Any]]:
     """Find NBA team by ID."""
     all_teams = nba_teams.get_teams()
     for team in all_teams:
@@ -111,7 +111,7 @@ def find_team_by_id(team_id: int) -> dict[str, Any] | None:
 
 
 @timed_cache(seconds=300)
-def get_upcoming_games(days: int = 7) -> list[dict[str, Any]]:
+def get_upcoming_games(days: int = 7) -> List[Dict[str, Any]]:
     """Get upcoming games for the next N days."""
     standings = _get_standings_map()
     all_games = []
