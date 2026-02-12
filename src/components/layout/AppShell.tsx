@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useI18n } from "@/i18n";
@@ -19,16 +19,52 @@ function BasketballIcon() {
   );
 }
 
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="transition-transform duration-200"
+    >
+      {open ? (
+        <>
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </>
+      ) : (
+        <>
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function AppHeader() {
   const { t } = useI18n();
   const pathname = usePathname();
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile menu when pathname changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   // Reset navigating state when pathname changes (navigation completed)
   const handleNavClick = useCallback((href: string) => {
     if (href !== pathname) {
       setNavigatingTo(href);
     }
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   // Clear navigatingTo when pathname changes
@@ -55,6 +91,7 @@ export function AppHeader() {
               {t.nav.brand}
             </span>
           </Link>
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -92,8 +129,55 @@ export function AppHeader() {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <ConnectButton />
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-neon-cyan hover:bg-neon-cyan/10 transition-colors"
+            aria-label="Toggle menu"
+          >
+            <MenuIcon open={mobileMenuOpen} />
+          </button>
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-neon-cyan/10 bg-background/95 backdrop-blur-sm">
+          <nav className="container mx-auto px-4 py-3 flex flex-col gap-1">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              const isNavigating = navigatingTo === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => handleNavClick(link.href)}
+                  className={`
+                    relative px-4 py-3 text-sm rounded-lg transition-all duration-200
+                    ${isActive
+                      ? "text-neon-cyan bg-neon-cyan/10"
+                      : isNavigating
+                        ? "text-neon-cyan/70 bg-neon-cyan/5"
+                        : "text-muted-foreground hover:text-neon-cyan/80 hover:bg-neon-cyan/5"
+                    }
+                    active:scale-[0.98] active:bg-neon-cyan/10
+                  `}
+                >
+                  <span className="flex items-center gap-2">
+                    {isNavigating && (
+                      <span className="w-3 h-3 border-2 border-neon-cyan/30 border-t-neon-cyan rounded-full animate-spin" />
+                    )}
+                    {link.label}
+                    {isActive && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-neon-cyan" />
+                    )}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
