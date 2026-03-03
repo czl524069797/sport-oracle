@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTodayGames, getTomorrowGames } from "@/lib/nba-data";
 import {
   getNBASeasonMarkets,
+  getNBAGameMarkets,
   buildTeamOddsMap,
-  enrichGamesWithOdds,
+  enrichGamesWithAllOdds,
 } from "@/lib/polymarket";
 import { runAnalysis } from "@/lib/ai-analyzer";
 
@@ -21,16 +22,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get games and season markets
-    const [todayGames, tomorrowGames, seasonMarkets] = await Promise.all([
+    // Get games, season markets, AND single-game markets in parallel
+    const [todayGames, tomorrowGames, seasonMarkets, gameMarketsMap] = await Promise.all([
       getTodayGames(),
       getTomorrowGames(),
       getNBASeasonMarkets(),
+      getNBAGameMarkets(),
     ]);
 
     const allGames = [...todayGames, ...tomorrowGames];
     const oddsMap = buildTeamOddsMap(seasonMarkets);
-    const gamesWithOdds = enrichGamesWithOdds(allGames, oddsMap);
+    const gamesWithOdds = enrichGamesWithAllOdds(allGames, oddsMap, gameMarketsMap);
 
     const target = gamesWithOdds.find((g) => g.game.gameId === gameId);
 

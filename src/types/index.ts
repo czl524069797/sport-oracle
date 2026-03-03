@@ -112,8 +112,8 @@ export interface AIAnalysisInput {
   awayPlayers: PlayerStats[];
   headToHead: HeadToHead;
   marketPrice: {
-    home: number;
-    away: number;
+    home: number | string;
+    away: number | string;
   };
 }
 
