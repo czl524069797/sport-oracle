@@ -200,6 +200,8 @@ export async function analyzeMatch(
       temperature: 0.3,
       max_tokens: 2000,
       stream: false,
+      tool_choice: "none" as const,
+      tools: [],
     }),
   });
 
@@ -221,12 +223,47 @@ export async function analyzeMatch(
     .trim();
 
   const jsonStart = cleaned.indexOf("{");
-  const jsonEnd = cleaned.lastIndexOf("}");
-  if (jsonStart === -1 || jsonEnd === -1) {
+  if (jsonStart === -1) {
     throw new Error(`Failed to parse AI response as JSON`);
   }
 
-  let jsonStr = cleaned.slice(jsonStart, jsonEnd + 1);
+  // Extract the first balanced JSON object (handles tool-call text appended after JSON)
+  let jsonStr: string | null = null;
+  {
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let i = jsonStart; i < cleaned.length; i++) {
+      const ch = cleaned[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\" && inString) { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") depth++;
+      else if (ch === "}") {
+        depth--;
+        if (depth === 0) {
+          const candidate = cleaned.slice(jsonStart, i + 1);
+          try {
+            const obj = JSON.parse(candidate);
+            if (obj.home_win_probability !== undefined || obj.away_win_probability !== undefined) {
+              jsonStr = candidate;
+              break;
+            }
+          } catch { /* keep searching */ }
+        }
+      }
+    }
+    // Fallback
+    if (!jsonStr) {
+      const end = cleaned.lastIndexOf("}");
+      if (end > jsonStart) jsonStr = cleaned.slice(jsonStart, end + 1);
+    }
+  }
+
+  if (!jsonStr) {
+    throw new Error(`Failed to parse AI response as JSON`);
+  }
   // eslint-disable-next-line no-control-regex
   jsonStr = jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "");
 

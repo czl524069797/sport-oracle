@@ -100,6 +100,66 @@ Include a "news_highlights" array with 2-5 key factors/news items affecting the 
 Include a "confidence_explanation" string explaining why your confidence level is what it is — what factors increase certainty and what factors create uncertainty.
 Respond ONLY with valid JSON, no markdown formatting or code fences.`;
 
+/**
+ * Extract the first balanced top-level JSON object from a string.
+ * Handles cases where the AI returns extra text (tool calls, markdown, etc.)
+ * after or before the JSON.
+ */
+function extractBalancedJson(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+
+    if (ch === "\\" && inString) {
+      escape = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        const candidate = text.slice(start, i + 1);
+        // Validate it's actually parseable and contains expected fields
+        try {
+          const obj = JSON.parse(candidate);
+          if (obj.home_win_probability !== undefined || obj.away_win_probability !== undefined) {
+            return candidate;
+          }
+          // It's valid JSON but not our analysis — keep searching
+        } catch {
+          // Not valid JSON — keep searching
+        }
+      }
+    }
+  }
+
+  // Fallback: return first-to-last brace (old behavior)
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    return text.slice(start, end + 1);
+  }
+  return null;
+}
+
 const LANGUAGE_INSTRUCTION: Record<string, string> = {
   zh: `\n\nIMPORTANT: You MUST respond with ALL text values in Chinese (Simplified). The "reasoning", "key_factors", "news_highlights", "confidence_explanation", and all string fields MUST be written in Chinese. The JSON keys should remain in English, but ALL values should be in Chinese.`,
   en: "",
@@ -189,6 +249,8 @@ export async function analyzeGame(
     temperature: 0.3,
     max_tokens: 4000,
     stream: false,
+    tool_choice: "none" as const,
+    tools: [],
   };
 
   const res = await fetch(url, {
@@ -219,13 +281,11 @@ export async function analyzeGame(
     .replace(/\n?```\s*$/i, "")
     .trim();
 
-  // Find the JSON object boundaries in case there's extra text
-  const jsonStart = cleaned.indexOf("{");
-  const jsonEnd = cleaned.lastIndexOf("}");
-  if (jsonStart === -1 || jsonEnd === -1) {
+  // Extract the outermost balanced JSON object
+  let jsonStr = extractBalancedJson(cleaned);
+  if (!jsonStr) {
     throw new Error(`Failed to parse AI response as JSON: ${cleaned.slice(0, 200)}`);
   }
-  let jsonStr = cleaned.slice(jsonStart, jsonEnd + 1);
 
   // Only strip truly problematic control characters (NUL, etc.).
   // Do NOT replace \n, \r, \t — they are valid JSON whitespace outside strings
