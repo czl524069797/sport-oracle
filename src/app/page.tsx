@@ -1,7 +1,8 @@
 "use client";
 
-import { useAccount } from "wagmi";
+import Image from "next/image";
 import Link from "next/link";
+import { useAccount } from "wagmi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState, useCallback } from "react";
 import type { DashboardStats, ApiResponse, BetRecord } from "@/types";
@@ -36,90 +37,148 @@ function StatCard({
   }[glowColor];
 
   return (
-    <div className={`glass-card rounded-xl p-5 transition-all duration-300 ${glowClass}`}>
-      <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBgClass}`}>
+    <div className={`glass-card rounded-2xl p-5 transition-all duration-300 ${glowClass}`}>
+      <div className="mb-3 flex items-start justify-between">
+        <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">{title}</p>
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBgClass}`}>
           {icon}
         </div>
       </div>
       <div className="text-2xl font-bold text-foreground">{value}</div>
-      {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+      {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+    </div>
+  );
+}
+
+function FeatureCard({
+  title,
+  description,
+  icon,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="hero-feature-card rounded-[28px] p-6 md:p-8">
+      <div className="flex items-start gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-neon-cyan/10 text-neon-cyan glow-cyan">
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold uppercase tracking-wide text-white md:text-2xl">{title}</h3>
+          <p className="mt-2 max-w-sm text-sm leading-7 text-slate-300 md:text-base">{description}</p>
+        </div>
+      </div>
     </div>
   );
 }
 
 function HeroSection({ t }: { t: ReturnType<typeof useI18n>["t"] }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-grid-animated py-16 px-8 text-center mb-8">
-      {/* Decorative court circle */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-neon-cyan/10 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-neon-cyan/5 pointer-events-none" />
+    <section className="relative overflow-hidden rounded-none border-y border-neon-cyan/10 bg-[#07111f] sm:rounded-[0] lg:-mx-4 lg:rounded-[32px] lg:border">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,159,255,0.15),transparent_45%),linear-gradient(90deg,rgba(10,20,35,0.9),rgba(3,8,20,0.72),rgba(10,20,35,0.9))]" />
+      <div className="absolute left-0 top-0 h-full w-full opacity-40 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_22%),radial-gradient(circle_at_20%_45%,rgba(0,255,255,0.15),transparent_20%),radial-gradient(circle_at_78%_36%,rgba(64,120,255,0.18),transparent_24%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.24)),linear-gradient(0deg,rgba(0,240,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.08)_1px,transparent_1px)] bg-[length:auto,48px_48px,48px_48px] [mask-image:linear-gradient(to_top,black,transparent)]" />
+      <div className="absolute left-[7%] top-[18%] h-72 w-72 rounded-full bg-neon-cyan/10 blur-3xl" />
+      <div className="absolute right-[10%] top-[14%] h-72 w-72 rounded-full bg-neon-blue/10 blur-3xl" />
 
-      {/* Content */}
-      <div className="relative z-10 space-y-4">
-        {/* Basketball SVG */}
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" className="animate-bounce-ball">
-              <circle cx="12" cy="12" r="10" stroke="#00f0ff" strokeWidth="1.5" />
-              <path d="M12 2C12 2 12 22 12 22" stroke="#00f0ff" strokeWidth="1" opacity="0.5" />
-              <path d="M2 12C2 12 22 12 22 12" stroke="#00f0ff" strokeWidth="1" opacity="0.5" />
-              <path d="M4.93 4.93C8 8 8 16 4.93 19.07" stroke="#00f0ff" strokeWidth="1" opacity="0.4" />
-              <path d="M19.07 4.93C16 8 16 16 19.07 19.07" stroke="#00f0ff" strokeWidth="1" opacity="0.4" />
-            </svg>
-            <div className="absolute inset-0 bg-neon-cyan/20 rounded-full blur-xl animate-pulse" />
+      <div className="relative px-4 pb-8 pt-10 sm:px-6 lg:px-10 lg:pb-10 lg:pt-8">
+        <div className="grid items-center gap-6 lg:grid-cols-[1fr_minmax(360px,560px)_1fr] lg:gap-2">
+          <div className="relative mx-auto flex h-[260px] w-full max-w-[360px] items-center justify-center lg:mx-0 lg:h-[560px] lg:max-w-none lg:justify-start">
+            <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-blue/20 blur-3xl lg:left-[42%] lg:h-64 lg:w-64" />
+            <Image
+              src="/images/football-player.png"
+              alt="football player"
+              width={512}
+              height={512}
+              priority
+              className="relative z-10 h-full w-auto object-contain drop-shadow-[0_0_36px_rgba(97,218,251,0.45)]"
+            />
+          </div>
+
+          <div className="relative z-10 text-center">
+            <h1 className="hero-title text-5xl font-black italic tracking-tight text-transparent md:text-7xl lg:text-[7rem]">
+              SportOracle
+            </h1>
+            <p className="mt-4 text-xl font-bold uppercase tracking-wide text-white md:text-3xl">
+              AI-DRIVEN SPORTS PREDICTION PLATFORM
+            </p>
+            <p className="mt-2 text-sm font-semibold uppercase tracking-[0.35em] text-slate-300 md:text-base">
+              NBA • Football • eSports • Polymarket
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/markets"
+                className="rounded-full border border-neon-cyan/40 bg-neon-cyan/10 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-neon-cyan transition hover:bg-neon-cyan/20"
+              >
+                {t.dashboard.browseMarkets}
+              </Link>
+              <Link
+                href="/strategy"
+                className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/10"
+              >
+                {t.dashboard.configStrategy}
+              </Link>
+            </div>
+            <p className="mt-5 text-sm text-slate-400">{t.dashboard.connectPrompt}</p>
+          </div>
+
+          <div className="relative mx-auto flex h-[250px] w-full max-w-[360px] items-center justify-center lg:mx-0 lg:h-[560px] lg:max-w-none lg:justify-end">
+            <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-cyan/20 blur-3xl lg:left-[58%] lg:h-64 lg:w-64" />
+            <Image
+              src="/images/basketball-player.png"
+              alt="basketball player"
+              width={1024}
+              height={1024}
+              priority
+              className="relative z-10 h-full w-auto object-contain drop-shadow-[0_0_36px_rgba(97,218,251,0.5)]"
+            />
           </div>
         </div>
 
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-neon-cyan via-neon-blue to-neon-purple bg-clip-text text-transparent animate-fade-in-up">
-          {t.dashboard.heroTitle}
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up stagger-1">
-          {t.dashboard.heroSubtitle}
-        </p>
+        <div className="relative z-10 mt-8 grid gap-5 lg:mt-2 lg:grid-cols-3">
+          <FeatureCard
+            title={t.dashboard.aiAnalysis}
+            description={t.dashboard.aiAnalysisDesc}
+            icon={
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M9.5 2a3.5 3.5 0 00-3.5 3.5V8H5a3 3 0 000 6h1v2.5A3.5 3.5 0 009.5 20H10" />
+                <path d="M14.5 2A3.5 3.5 0 0118 5.5V8h1a3 3 0 010 6h-1v2.5a3.5 3.5 0 01-3.5 3.5H14" />
+                <path d="M10 8h4" />
+                <path d="M10 12h4" />
+                <path d="M10 16h4" />
+                <path d="M3 12h2" />
+                <path d="M19 12h2" />
+              </svg>
+            }
+          />
+          <FeatureCard
+            title={t.dashboard.smartBetting}
+            description={t.dashboard.smartBettingDesc}
+            icon={
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M12 2v20" />
+                <path d="M5 12H2a10 10 0 0020 0h-3" />
+                <circle cx="12" cy="5" r="3" />
+                <path d="M6 20l6-6 6 6" />
+              </svg>
+            }
+          />
+          <FeatureCard
+            title={t.dashboard.polymarket}
+            description={t.dashboard.polymarketDesc}
+            icon={
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M5 4h7l7 4v12H12L5 16V4z" />
+                <path d="M12 4v16" />
+                <path d="M5 10l7 4 7-4" />
+              </svg>
+            }
+          />
+        </div>
       </div>
-
-      {/* Feature cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12 max-w-4xl mx-auto relative z-10">
-        <div className="glass-card rounded-xl p-6 text-left glow-cyan animate-fade-in-up stagger-1 group hover:border-neon-cyan/30 transition-all">
-          <div className="w-10 h-10 rounded-lg bg-neon-cyan/10 flex items-center justify-center mb-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-            </svg>
-          </div>
-          <h3 className="font-semibold text-foreground mb-1">{t.dashboard.aiAnalysis}</h3>
-          <p className="text-sm text-muted-foreground">{t.dashboard.aiAnalysisDesc}</p>
-        </div>
-
-        <div className="glass-card rounded-xl p-6 text-left glow-orange animate-fade-in-up stagger-2 group hover:border-neon-orange/30 transition-all">
-          <div className="w-10 h-10 rounded-lg bg-neon-orange/10 flex items-center justify-center mb-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2">
-              <path d="M12 22V8" /><path d="M5 12H2a10 10 0 0020 0h-3" /><circle cx="12" cy="5" r="3" />
-            </svg>
-          </div>
-          <h3 className="font-semibold text-foreground mb-1">{t.dashboard.smartBetting}</h3>
-          <p className="text-sm text-muted-foreground">{t.dashboard.smartBettingDesc}</p>
-        </div>
-
-        <div className="glass-card rounded-xl p-6 text-left glow-purple animate-fade-in-up stagger-3 group hover:border-neon-purple/30 transition-all">
-          <div className="w-10 h-10 rounded-lg bg-neon-purple/10 flex items-center justify-center mb-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
-            </svg>
-          </div>
-          <h3 className="font-semibold text-foreground mb-1">{t.dashboard.polymarket}</h3>
-          <p className="text-sm text-muted-foreground">{t.dashboard.polymarketDesc}</p>
-        </div>
-      </div>
-
-      <p className="text-sm text-muted-foreground mt-10 relative z-10 animate-fade-in-up stagger-4">
-        <span className="inline-flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />
-          {t.dashboard.connectPrompt}
-        </span>
-      </p>
-    </div>
+    </section>
   );
 }
 
@@ -127,8 +186,14 @@ export default function DashboardPage() {
   const { address, isConnected } = useAccount();
   const { t } = useI18n();
   const [stats, setStats] = useState<DashboardStats>({
-    totalBets: 0, winRate: 0, totalPnl: 0, roi: 0,
-    activeBets: 0, todayBets: 0, todayPnl: 0, avgConfidence: 0,
+    totalBets: 0,
+    winRate: 0,
+    totalPnl: 0,
+    roi: 0,
+    activeBets: 0,
+    todayBets: 0,
+    todayPnl: 0,
+    avgConfidence: 0,
   });
 
   const fetchStats = useCallback(async () => {
@@ -152,30 +217,41 @@ export default function DashboardPage() {
         activeBets: bets.filter((b) => ["pending", "placed", "filled"].includes(b.status)).length,
         todayBets: todayBets.length,
         todayPnl: todayBets.reduce((s, b) => s + (b.pnl ?? 0), 0),
-        avgConfidence: bets.length > 0 ? bets.reduce((s, b) => s + (b.analysis?.confidence ?? 0), 0) / bets.length : 0,
+        avgConfidence:
+          bets.length > 0
+            ? bets.reduce((s, b) => s + (b.analysis?.confidence ?? 0), 0) / bets.length
+            : 0,
       });
-    } catch { /* silently fail */ }
+    } catch {
+      // silently fail
+    }
   }, [address]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (!isConnected) {
-    return <HeroSection t={t} />;
+    return (
+      <div className="-mt-8">
+        <HeroSection t={t} />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page title */}
+    <div className="-mt-8 space-y-8">
+      <HeroSection t={t} />
+
       <div className="flex items-center gap-3">
-        <div className="w-1 h-8 rounded-full bg-gradient-to-b from-neon-cyan to-neon-blue" />
+        <div className="h-8 w-1 rounded-full bg-gradient-to-b from-neon-cyan to-neon-blue" />
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{t.dashboard.title}</h1>
-          <p className="text-muted-foreground mt-0.5">{t.dashboard.subtitle}</p>
+          <h2 className="text-3xl font-bold text-foreground">{t.dashboard.title}</h2>
+          <p className="mt-0.5 text-muted-foreground">{t.dashboard.subtitle}</p>
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
           title={t.dashboard.totalBets}
           value={stats.totalBets.toString()}
@@ -183,7 +259,9 @@ export default function DashboardPage() {
           glowColor="cyan"
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 22V8" /><path d="M5 12H2a10 10 0 0020 0h-3" /><circle cx="12" cy="5" r="3" />
+              <path d="M12 22V8" />
+              <path d="M5 12H2a10 10 0 0020 0h-3" />
+              <circle cx="12" cy="5" r="3" />
             </svg>
           }
         />
@@ -194,7 +272,8 @@ export default function DashboardPage() {
           glowColor="green"
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" />
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+              <polyline points="16 7 22 7 22 13" />
             </svg>
           }
         />
@@ -205,7 +284,8 @@ export default function DashboardPage() {
           glowColor="orange"
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
             </svg>
           }
         />
@@ -216,15 +296,14 @@ export default function DashboardPage() {
           glowColor="purple"
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
             </svg>
           }
         />
       </div>
 
-      {/* Quick actions & bet types */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick actions */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -235,35 +314,35 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/markets" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-cyan/30 hover:bg-neon-cyan/5 transition-all duration-200 active:scale-[0.98]">
+            <Link href="/markets" className="group block rounded-lg border border-border bg-secondary/30 p-4 transition-all duration-200 hover:border-neon-cyan/30 hover:bg-neon-cyan/5 active:scale-[0.98]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-foreground group-hover:text-neon-cyan transition-colors">{t.dashboard.browseMarkets}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">{t.dashboard.browseMarketsDesc}</p>
+                  <p className="font-medium text-foreground transition-colors group-hover:text-neon-cyan">{t.dashboard.browseMarkets}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{t.dashboard.browseMarketsDesc}</p>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground group-hover:text-neon-cyan transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground transition-colors group-hover:text-neon-cyan">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
             </Link>
-            <Link href="/strategy" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-orange/30 hover:bg-neon-orange/5 transition-all duration-200 active:scale-[0.98]">
+            <Link href="/strategy" className="group block rounded-lg border border-border bg-secondary/30 p-4 transition-all duration-200 hover:border-neon-orange/30 hover:bg-neon-orange/5 active:scale-[0.98]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-foreground group-hover:text-neon-orange transition-colors">{t.dashboard.configStrategy}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">{t.dashboard.configStrategyDesc}</p>
+                  <p className="font-medium text-foreground transition-colors group-hover:text-neon-orange">{t.dashboard.configStrategy}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{t.dashboard.configStrategyDesc}</p>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground group-hover:text-neon-orange transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground transition-colors group-hover:text-neon-orange">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
             </Link>
-            <Link href="/history" className="group block p-4 rounded-lg border border-border bg-secondary/30 hover:border-neon-purple/30 hover:bg-neon-purple/5 transition-all duration-200 active:scale-[0.98]">
+            <Link href="/history" className="group block rounded-lg border border-border bg-secondary/30 p-4 transition-all duration-200 hover:border-neon-purple/30 hover:bg-neon-purple/5 active:scale-[0.98]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-foreground group-hover:text-neon-purple transition-colors">{t.dashboard.viewHistory}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">{t.dashboard.viewHistoryDesc}</p>
+                  <p className="font-medium text-foreground transition-colors group-hover:text-neon-purple">{t.dashboard.viewHistory}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{t.dashboard.viewHistoryDesc}</p>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground group-hover:text-neon-purple transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground transition-colors group-hover:text-neon-purple">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
@@ -271,38 +350,39 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Bet types */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" /><path d="M12 2C12 2 12 22 12 22" /><path d="M2 12C2 12 22 12 22 12" />
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2C12 2 12 22 12 22" />
+                <path d="M2 12C2 12 22 12 22 12" />
               </svg>
               {t.dashboard.betTypes}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-4 rounded-lg border border-neon-cyan/20 bg-neon-cyan/5 glow-cyan">
+            <div className="rounded-lg border border-neon-cyan/20 bg-neon-cyan/5 p-4 glow-cyan">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-neon-cyan/20 flex items-center justify-center text-neon-cyan font-bold text-sm">ML</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-cyan/20 text-sm font-bold text-neon-cyan">ML</div>
                 <div>
                   <p className="font-medium text-neon-cyan">{t.dashboard.moneyline}</p>
                   <p className="text-sm text-muted-foreground">{t.dashboard.moneylineDesc}</p>
                 </div>
               </div>
             </div>
-            <div className="p-4 rounded-lg border border-neon-purple/20 bg-neon-purple/5 glow-purple">
+            <div className="rounded-lg border border-neon-purple/20 bg-neon-purple/5 p-4 glow-purple">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-neon-purple/20 flex items-center justify-center text-neon-purple font-bold text-sm">SP</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-purple/20 text-sm font-bold text-neon-purple">SP</div>
                 <div>
                   <p className="font-medium text-neon-purple">{t.dashboard.spread}</p>
                   <p className="text-sm text-muted-foreground">{t.dashboard.spreadDesc}</p>
                 </div>
               </div>
             </div>
-            <div className="p-4 rounded-lg border border-neon-orange/20 bg-neon-orange/5 glow-orange">
+            <div className="rounded-lg border border-neon-orange/20 bg-neon-orange/5 p-4 glow-orange">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-neon-orange/20 flex items-center justify-center text-neon-orange font-bold text-sm">OU</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-orange/20 text-sm font-bold text-neon-orange">OU</div>
                 <div>
                   <p className="font-medium text-neon-orange">{t.dashboard.overUnder}</p>
                   <p className="text-sm text-muted-foreground">{t.dashboard.overUnderDesc}</p>
