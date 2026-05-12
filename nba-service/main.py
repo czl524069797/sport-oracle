@@ -5,12 +5,14 @@ import os
 env_path = os.path.join(os.path.dirname(__file__), "..", ".env.local")
 load_dotenv(env_path)
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from endpoints.schedule import router as schedule_router
 from endpoints.teams import router as teams_router
 from endpoints.players import router as players_router
 from endpoints.trading import router as trading_router
+from endpoints.auth import router as auth_router
+from middlewares.skill_verify import requires_skill_verified
 
 app = FastAPI(
     title="NBA Data Service",
@@ -29,7 +31,8 @@ app.add_middleware(
 app.include_router(schedule_router, prefix="/api/schedule", tags=["Schedule"])
 app.include_router(teams_router, prefix="/api/teams", tags=["Teams"])
 app.include_router(players_router, prefix="/api/players", tags=["Players"])
-app.include_router(trading_router, prefix="/api/trading", tags=["Trading"])
+app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+app.include_router(trading_router, prefix="/api/trading", tags=["Trading"], dependencies=[Depends(requires_skill_verified)])
 
 
 @app.get("/health")

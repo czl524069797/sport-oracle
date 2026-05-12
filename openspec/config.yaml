@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Frontend: Next.js 14 (App Router), TypeScript (strict), Tailwind + shadcn/ui, Zustand + TanStack React Query, RainbowKit + wagmi + viem.
+  AI & Markets: OpenAI-compatible API (GPT‑4), Polymarket Gamma/CLOB APIs.
+  Data/DB: Prisma + PostgreSQL/SQLite.
+  Services: Python FastAPI nba-service (uvicorn), optional VPS deployment; cron jobs.
+  i18n: Chinese/English UI and AI output; team name translations.
+
+rules:
+  proposal:
+    - Default to non-custodial flows: no server-held private keys; client-signed orders only; offer "Go to Polymarket" fallback.
+    - State target sport/market scope, data freshness, and compliance/risk notes in proposals.
+    - Cover wallet states (locked, no balance, no allowance), error mapping, and i18n in specs.
+    - Separate frontend vs nba-service responsibilities, rate limits/backoff, caching TTLs, and EIP‑4361/712 details in design.
+    - Include DB migration steps and feature flags; document env vars.
+  specs:
+    - Use SHALL/MUST wording
+    - Include Given/When/Then scenarios for behavior
+    - Define loading/empty/error and data freshness expectations
+    - Document rate limits, retries, and fallback paths
+  design:
+    - Provide API shapes, dependencies, and security considerations
+    - List affected components/modules and data flow
+    - Note performance constraints and monitoring hooks
+  tasks:
+    - Break into steps under ~2 hours each
+    - Include testing and docs updates
+    - Update env vars and deployments where applicable

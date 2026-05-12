@@ -11,6 +11,8 @@ import {
   getNBAGameMarkets,
 } from "@/lib/polymarket";
 
+export const dynamic = "force-dynamic";
+
 function getDateInTimezone(tz: string): string {
   try {
     return new Date().toLocaleDateString("en-CA", { timeZone: tz });

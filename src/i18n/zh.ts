@@ -42,11 +42,23 @@ const zh = {
     save: "保存",
     cancel: "取消",
     confirm: "确认",
+    signIn: "签名登录",
+    signing: "登录中...",
     active: "活跃",
     inactive: "未激活",
     closed: "已关闭",
     connectWallet: "连接钱包",
     wrongNetwork: "网络错误",
+  },
+
+  // Skill / whitelist
+  skill: {
+    allowlistedSignedIn: "已白名单 • 已登录",
+    allowlistedSignIn: "已白名单 • 登录",
+    notAllowlistedSignedIn: "未白名单 • 已登录",
+    notAllowlisted: "未白名单",
+    tipAllowlisted: "地址已在链上白名单",
+    tipNotAllowlisted: "地址不在白名单中",
   },
 
   // Nav
@@ -165,6 +177,8 @@ const zh = {
     placeBet: "下注",
     placingBet: "下注中...",
     noEdge: "未发现优势 — 跳过",
+    goToPolymarket: "去 Polymarket 下单",
+    copyOrder: "复制下单信息",
     newsHighlights: "新闻动态",
     directBet: "直接下注",
     confidenceExplanation: "置信度分析",

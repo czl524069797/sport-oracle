@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { SkillStatus } from "@/components/wallet/SkillStatus";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useI18n } from "@/i18n";
 
@@ -82,8 +83,8 @@ export function AppHeader() {
   ];
 
   return (
-    <header className="glass border-b border-neon-cyan/10 sticky top-0 z-50">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[rgba(8,14,26,0.78)] backdrop-blur-xl">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5 group">
             <BasketballIcon />
@@ -128,6 +129,7 @@ export function AppHeader() {
         </div>
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
+          <SkillStatus />
           <ConnectButton />
           {/* Mobile Menu Button */}
           <button

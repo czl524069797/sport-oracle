@@ -46,6 +46,9 @@ const ESPORTS_TAG_ID = "64";
 // Regex to detect "vs" or "vs." in event titles
 const VS_PATTERN = /\bvs\.?\b/i;
 
+// Only treat matches within this many days as "recent matches"
+const MAX_MATCH_DAYS_AHEAD = 14;
+
 function parseOutcomePrices(raw: string): number[] {
   try {
     return JSON.parse(raw) as number[];
@@ -317,36 +320,52 @@ async function fetchMatchesAndEvents(
 ): Promise<{ matches: PolymarketMatch[]; events: PolymarketEvent[] }> {
   return cached(`poly:${category}-matches`, async () => {
     const categoryRaw = await fetchRawEvents(categoryTagId);
+    const allEventsMap = new Map<string, PolymarketEvent>();
+    const matchesMap = new Map<string, PolymarketMatch>();
 
-  const allEventsMap = new Map<string, PolymarketEvent>();
-  const matchesMap = new Map<string, PolymarketMatch>();
+    const now = new Date();
+    const maxAheadMs = MAX_MATCH_DAYS_AHEAD * 24 * 60 * 60 * 1000;
 
-  // Process category events
-  for (const raw of categoryRaw) {
-    const event = toPolymarketEvent(raw, category);
-    if (!event) continue;
+    // Process category events
+    for (const raw of categoryRaw) {
+      const event = toPolymarketEvent(raw, category);
+      if (!event) continue;
 
-    if (VS_PATTERN.test(event.title)) {
-      const match = eventToMatch(event, category);
-      if (match) {
-        matchesMap.set(event.id, match);
+      if (VS_PATTERN.test(event.title)) {
+        const match = eventToMatch(event, category);
+        if (match) {
+          const rawDate = match.matchDate;
+          const matchDate = rawDate ? new Date(rawDate) : null;
+
+          if (matchDate && !Number.isNaN(matchDate.getTime())) {
+            const diff = matchDate.getTime() - now.getTime();
+            if (diff >= 0 && diff <= maxAheadMs) {
+              matchesMap.set(event.id, match);
+            } else {
+              allEventsMap.set(event.id, event);
+            }
+          } else {
+            allEventsMap.set(event.id, event);
+          }
+        } else {
+          allEventsMap.set(event.id, event);
+        }
+      } else {
+        allEventsMap.set(event.id, event);
       }
-    } else {
-      allEventsMap.set(event.id, event);
     }
-  }
 
-  // Sort matches by volume desc, take top N
-  const matches = Array.from(matchesMap.values())
-    .sort((a, b) => b.event.volume - a.event.volume)
-    .slice(0, limit);
+    // Sort matches by volume desc, take top N
+    const matches = Array.from(matchesMap.values())
+      .sort((a, b) => b.event.volume - a.event.volume)
+      .slice(0, limit);
 
-  // Sort remaining events (futures/season) by volume desc, take top N
-  const events = Array.from(allEventsMap.values())
-    .sort((a, b) => b.volume - a.volume)
-    .slice(0, limit);
+    // Sort remaining events (futures/season) by volume desc, take top N
+    const events = Array.from(allEventsMap.values())
+      .sort((a, b) => b.volume - a.volume)
+      .slice(0, limit);
 
-  return { matches, events };
+    return { matches, events };
   }, FIVE_MINUTES);
 }
 

@@ -167,6 +167,7 @@ export async function runAnalysis(
     recommendedSide: edgeCalc.bestSide,
     recommendedOutcome,
     tokenId,
+    polymarketUrl: gameOdds?.polymarketUrl,
   };
 
   // Persist to database

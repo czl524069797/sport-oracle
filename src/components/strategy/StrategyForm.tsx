@@ -15,7 +15,7 @@ export function StrategyForm() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<StrategyConfig>({
     name: "Default Strategy", isActive: true, minConfidence: 0.65,
-    maxBetAmount: 10, dailyBudget: 50, autoExecute: false,
+    maxBetAmount: 1, dailyBudget: 10, autoExecute: false,
   });
 
   const fetchStrategies = useCallback(async () => {
@@ -76,12 +76,12 @@ export function StrategyForm() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.strategy.maxBet}</label>
-            <Input type="number" min={1} max={1000} value={form.maxBetAmount} onChange={(e) => setForm({ ...form, maxBetAmount: Number(e.target.value) })} className="mt-1.5" />
+            <Input type="number" min={0.1} max={1000} step={0.1} value={form.maxBetAmount} onChange={(e) => setForm({ ...form, maxBetAmount: Number(e.target.value) })} className="mt-1.5" />
           </div>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.strategy.dailyBudget}</label>
-          <Input type="number" min={1} max={10000} value={form.dailyBudget} onChange={(e) => setForm({ ...form, dailyBudget: Number(e.target.value) })} className="mt-1.5" />
+          <Input type="number" min={0.1} max={10000} step={0.1} value={form.dailyBudget} onChange={(e) => setForm({ ...form, dailyBudget: Number(e.target.value) })} className="mt-1.5" />
         </div>
         <div className="flex items-center gap-6 py-2">
           <label className="flex items-center gap-2.5 cursor-pointer">

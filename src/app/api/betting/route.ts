@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const auth = request.headers.get("authorization") || undefined;
+
     const result = await placeBet(user.id, {
       analysisId: validated.analysisId,
       tokenId: validated.tokenId,
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
       outcome: validated.outcome,
       amount: validated.amount,
       price: validated.price,
-    });
+    }, auth);
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {

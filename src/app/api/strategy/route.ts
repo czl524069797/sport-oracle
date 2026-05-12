@@ -9,8 +9,8 @@ const strategySchema = z.object({
   name: z.string().min(1).max(100),
   isActive: z.boolean().default(true),
   minConfidence: z.number().min(0).max(1).default(0.65),
-  maxBetAmount: z.number().positive().max(1000).default(10),
-  dailyBudget: z.number().positive().max(10000).default(50),
+  maxBetAmount: z.number().min(0.1).max(1000).default(1),
+  dailyBudget: z.number().min(0.1).max(10000).default(10),
   autoExecute: z.boolean().default(false),
 });
 

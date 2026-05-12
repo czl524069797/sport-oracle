@@ -29,7 +29,7 @@ export function LanguageSwitcher() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="h-8 px-2.5 text-xs rounded-lg border border-border bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-neon-cyan/30 transition-all flex items-center gap-1.5"
+        className="flex h-12 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 text-xs text-slate-200 transition-all hover:border-neon-cyan/30 hover:text-white"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />

@@ -156,6 +156,7 @@ export interface AnalysisWithEdge extends AIAnalysisResult {
   recommendedSide: "home" | "away" | "none";
   recommendedOutcome: "YES" | "NO";
   tokenId: string;
+  polymarketUrl?: string;
 }
 
 // ============= Strategy Types =============

@@ -6,7 +6,8 @@ const NBA_SERVICE_URL =
 
 export async function placeBet(
   userId: string,
-  request: BetRequest
+  request: BetRequest,
+  authToken?: string
 ): Promise<{ orderId: string; status: string }> {
   // Create bet record in pending status
   const bet = await prisma.bet.create({
@@ -26,9 +27,12 @@ export async function placeBet(
     // Call Python trading service (uses py-clob-client with private key)
     const size = request.amount / request.price;
 
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (authToken) headers["Authorization"] = authToken
+
     const res = await fetch(`${NBA_SERVICE_URL}/api/trading/place`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         token_id: request.tokenId,
         price: request.price,

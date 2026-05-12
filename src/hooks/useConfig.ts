@@ -10,6 +10,7 @@ interface ConfigData {
 export function useConfig() {
   const [hasPrivateKey, setHasPrivateKey] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const serverTradingEnabled = (process.env.NEXT_PUBLIC_ENABLE_SERVER_TRADING ?? "false").toLowerCase() === "true";
 
   useEffect(() => {
     async function fetchConfig() {
@@ -28,5 +29,5 @@ export function useConfig() {
     fetchConfig();
   }, []);
 
-  return { hasPrivateKey, loaded };
+  return { hasPrivateKey, loaded, serverTradingEnabled };
 }

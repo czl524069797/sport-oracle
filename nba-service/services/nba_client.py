@@ -1,156 +1,148 @@
-from nba_api.stats.endpoints import scoreboardv2, leaguestandingsv3
-from nba_api.stats.static import teams as nba_teams
+import requests
 from datetime import datetime, timedelta
 from services.cache import timed_cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
+
+NBA_SCHEDULE_URL = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
 
 
-def _current_season() -> str:
-    """Return NBA season string like '2025-26' based on current date."""
-    now = datetime.now()
-    year = now.year if now.month >= 10 else now.year - 1
-    return f"{year}-{str(year + 1)[-2:]}"
+def _parse_schedule_date(raw: str) -> datetime:
+    return datetime.strptime(raw, "%m/%d/%Y %H:%M:%S")
 
 
 @timed_cache(seconds=3600)
-def _get_standings_map() -> Dict[int, Dict[str, str]]:
-    """Get current season standings as a teamId -> {record, home, road} map."""
-    try:
-        standings = leaguestandingsv3.LeagueStandingsV3(
-            season=_current_season(),
-            season_type="Regular Season",
-        )
-        data = standings.get_normalized_dict()
-        rows = data.get("Standings", [])
-        result: Dict[int, Dict[str, str]] = {}
-        for row in rows:
-            team_id = row.get("TeamID", 0)
-            wins = row.get("WINS", 0)
-            losses = row.get("LOSSES", 0)
-            result[team_id] = {
-                "record": f"{wins}-{losses}",
-                "home": row.get("HOME", ""),
-                "road": row.get("ROAD", ""),
-            }
-        return result
-    except Exception:
-        return {}
+def _fetch_league_schedule() -> Dict[str, Any]:
+    resp = requests.get(NBA_SCHEDULE_URL, timeout=20)
+    resp.raise_for_status()
+    return resp.json()["leagueSchedule"]
 
 
-def _get_team_records(team_id: int, standings: Dict[int, Dict[str, str]]) -> Dict[str, str]:
-    """Get team records from standings map."""
-    return standings.get(team_id, {"record": "", "home": "", "road": ""})
+@timed_cache(seconds=3600)
+def _get_game_dates() -> List[Dict[str, Any]]:
+    return _fetch_league_schedule().get("gameDates", [])
+
+
+@timed_cache(seconds=3600)
+def _build_team_index() -> Dict[int, Dict[str, str]]:
+    teams: Dict[int, Dict[str, str]] = {}
+    for gd in _get_game_dates():
+        games = gd.get("games", [])
+        for g in games:
+            for side in ["homeTeam", "awayTeam"]:
+                t = g.get(side) or {}
+                team_id = int(t.get("teamId", 0))
+                if not team_id or team_id in teams:
+                    continue
+                teams[team_id] = {
+                    "teamName": t.get("teamName", ""),
+                    "teamCity": t.get("teamCity", ""),
+                    "teamTricode": t.get("teamTricode", ""),
+                }
+    return teams
+
+
+def _format_team_name(meta: Dict[str, str]) -> str:
+    city = meta.get("teamCity", "").strip()
+    name = meta.get("teamName", "").strip()
+    if city and name:
+        return f"{city} {name}"
+    return name or city or "Unknown"
 
 
 @timed_cache(seconds=300)
 def get_today_scoreboard() -> List[Dict[str, Any]]:
-    """Get today's NBA games from the scoreboard."""
-    today = datetime.now().strftime("%Y-%m-%d")
-    try:
-        sb = scoreboardv2.ScoreboardV2(game_date=today)
-        games_data = sb.get_normalized_dict()
-        game_header = games_data.get("GameHeader", [])
-    except Exception:
-        game_header = []
-
-    standings = _get_standings_map()
-
-    games = []
-    for g in game_header:
-        home_id = g.get("HOME_TEAM_ID", 0)
-        away_id = g.get("VISITOR_TEAM_ID", 0)
-        home_team = find_team_by_id(home_id)
-        away_team = find_team_by_id(away_id)
-        if not home_team or not away_team:
+    today = datetime.utcnow().date()
+    games: List[Dict[str, Any]] = []
+    teams = _build_team_index()
+    for gd in _get_game_dates():
+        raw_date = gd.get("gameDate")
+        if not raw_date:
             continue
-
-        # Try GameHeader wins/losses first; fall back to standings
-        home_w = g.get("HOME_TEAM_WINS", 0)
-        home_l = g.get("HOME_TEAM_LOSSES", 0)
-        away_w = g.get("VISITOR_TEAM_WINS", 0)
-        away_l = g.get("VISITOR_TEAM_LOSSES", 0)
-
-        home_recs = _get_team_records(home_id, standings)
-        away_recs = _get_team_records(away_id, standings)
-
-        home_record = f"{home_w}-{home_l}" if (home_w + home_l) > 0 else home_recs["record"]
-        away_record = f"{away_w}-{away_l}" if (away_w + away_l) > 0 else away_recs["record"]
-
-        games.append({
-            "gameId": g.get("GAME_ID", ""),
-            "gameDate": g.get("GAME_DATE_EST", today),
-            "homeTeam": {
-                "teamId": home_id,
-                "teamName": home_team["full_name"],
-                "teamAbbreviation": home_team["abbreviation"],
-                "record": home_record,
-                "homeRecord": home_recs.get("home", ""),
-                "awayRecord": home_recs.get("road", ""),
-            },
-            "awayTeam": {
-                "teamId": away_id,
-                "teamName": away_team["full_name"],
-                "teamAbbreviation": away_team["abbreviation"],
-                "record": away_record,
-                "homeRecord": away_recs.get("home", ""),
-                "awayRecord": away_recs.get("road", ""),
-            },
-            "status": g.get("GAME_STATUS_TEXT", ""),
-        })
-
+        try:
+            date = _parse_schedule_date(raw_date).date()
+        except Exception:
+            continue
+        if date != today:
+            continue
+        game_date_str = date.strftime("%Y-%m-%d")
+        for g in gd.get("games", []):
+            home = g.get("homeTeam", {})
+            away = g.get("awayTeam", {})
+            home_id = int(home.get("teamId", 0) or 0)
+            away_id = int(away.get("teamId", 0) or 0)
+            home_meta = teams.get(home_id, {})
+            away_meta = teams.get(away_id, {})
+            games.append(
+                {
+                    "gameId": g.get("gameId", ""),
+                    "gameDate": game_date_str,
+                    "homeTeam": {
+                        "teamId": home_id,
+                        "teamName": _format_team_name(home_meta),
+                        "teamAbbreviation": home_meta.get("teamTricode", home.get("teamTricode", "")),
+                        "record": f"{home.get('wins', 0)}-{home.get('losses', 0)}",
+                        "homeRecord": "",
+                        "awayRecord": "",
+                    },
+                    "awayTeam": {
+                        "teamId": away_id,
+                        "teamName": _format_team_name(away_meta),
+                        "teamAbbreviation": away_meta.get("teamTricode", away.get("teamTricode", "")),
+                        "record": f"{away.get('wins', 0)}-{away.get('losses', 0)}",
+                        "homeRecord": "",
+                        "awayRecord": "",
+                    },
+                    "status": g.get("gameStatusText", ""),
+                }
+            )
     return games
-
-
-def find_team_by_id(team_id: int) -> Optional[Dict[str, Any]]:
-    """Find NBA team by ID."""
-    all_teams = nba_teams.get_teams()
-    for team in all_teams:
-        if team["id"] == team_id:
-            return team
-    return None
 
 
 @timed_cache(seconds=300)
 def get_upcoming_games(days: int = 7) -> List[Dict[str, Any]]:
-    """Get upcoming games for the next N days."""
-    standings = _get_standings_map()
-    all_games = []
-    for i in range(days):
-        date = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
+    today = datetime.utcnow().date()
+    end_date = today + timedelta(days=days - 1)
+    games: List[Dict[str, Any]] = []
+    teams = _build_team_index()
+    for gd in _get_game_dates():
+        raw_date = gd.get("gameDate")
+        if not raw_date:
+            continue
         try:
-            sb = scoreboardv2.ScoreboardV2(game_date=date)
-            games_data = sb.get_normalized_dict()
-            game_header = games_data.get("GameHeader", [])
-            for g in game_header:
-                home_id = g.get("HOME_TEAM_ID", 0)
-                away_id = g.get("VISITOR_TEAM_ID", 0)
-                home_team = find_team_by_id(home_id)
-                away_team = find_team_by_id(away_id)
-                if not home_team or not away_team:
-                    continue
-                home_recs = _get_team_records(home_id, standings)
-                away_recs = _get_team_records(away_id, standings)
-                all_games.append({
-                    "gameId": g.get("GAME_ID", ""),
-                    "gameDate": date,
+            date = _parse_schedule_date(raw_date).date()
+        except Exception:
+            continue
+        if date < today or date > end_date:
+            continue
+        game_date_str = date.strftime("%Y-%m-%d")
+        for g in gd.get("games", []):
+            home = g.get("homeTeam", {})
+            away = g.get("awayTeam", {})
+            home_id = int(home.get("teamId", 0) or 0)
+            away_id = int(away.get("teamId", 0) or 0)
+            home_meta = teams.get(home_id, {})
+            away_meta = teams.get(away_id, {})
+            games.append(
+                {
+                    "gameId": g.get("gameId", ""),
+                    "gameDate": game_date_str,
                     "homeTeam": {
                         "teamId": home_id,
-                        "teamName": home_team["full_name"],
-                        "teamAbbreviation": home_team["abbreviation"],
-                        "record": home_recs.get("record", ""),
-                        "homeRecord": home_recs.get("home", ""),
-                        "awayRecord": home_recs.get("road", ""),
+                        "teamName": _format_team_name(home_meta),
+                        "teamAbbreviation": home_meta.get("teamTricode", home.get("teamTricode", "")),
+                        "record": f"{home.get('wins', 0)}-{home.get('losses', 0)}",
+                        "homeRecord": "",
+                        "awayRecord": "",
                     },
                     "awayTeam": {
                         "teamId": away_id,
-                        "teamName": away_team["full_name"],
-                        "teamAbbreviation": away_team["abbreviation"],
-                        "record": away_recs.get("record", ""),
-                        "homeRecord": away_recs.get("home", ""),
-                        "awayRecord": away_recs.get("road", ""),
+                        "teamName": _format_team_name(away_meta),
+                        "teamAbbreviation": away_meta.get("teamTricode", away.get("teamTricode", "")),
+                        "record": f"{away.get('wins', 0)}-{away.get('losses', 0)}",
+                        "homeRecord": "",
+                        "awayRecord": "",
                     },
-                    "status": g.get("GAME_STATUS_TEXT", ""),
-                })
-        except Exception:
-            continue
-    return all_games
+                    "status": g.get("gameStatusText", ""),
+                }
+            )
+    return games

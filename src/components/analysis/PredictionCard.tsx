@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatPercent } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { useConfig } from "@/hooks/useConfig";
+import { useCallback } from "react";
 import { useAccount } from "wagmi";
 import type { AnalysisWithEdge } from "@/types";
 
@@ -18,11 +19,24 @@ interface PredictionCardProps {
 export function PredictionCard({ analysis, onPlaceBet, betting }: PredictionCardProps) {
   const { t } = useI18n();
   const { address } = useAccount();
-  const { hasPrivateKey } = useConfig();
+  const { hasPrivateKey, serverTradingEnabled } = useConfig();
   const edgeColor = analysis.edgePercent > 0.1 ? "text-neon-green" : analysis.edgePercent > 0.05 ? "text-neon-orange" : "text-red-400";
   const edgeGlow = analysis.edgePercent > 0.1 ? "glow-green" : analysis.edgePercent > 0.05 ? "glow-orange" : "";
 
-  const canBet = !!address || hasPrivateKey;
+  const canBet = (!!address || hasPrivateKey) && serverTradingEnabled;
+
+  const handleOpenPolymarket = useCallback(() => {
+    const url = analysis.polymarketUrl || "https://polymarket.com/markets";
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [analysis.polymarketUrl]);
+
+  const handleCopyOrder = useCallback(async () => {
+    try {
+      const text = `Market: ${analysis.homeTeam} vs ${analysis.awayTeam}\nSide: ${analysis.recommendedSide === "home" ? analysis.homeTeam : analysis.awayTeam}\nRecommended: BUY @ ${Math.round(analysis.marketPrice * 100)}%\nLink: ${analysis.polymarketUrl ?? "https://polymarket.com/markets"}`;
+      await navigator.clipboard.writeText(text);
+      // Optional: toast here in future
+    } catch {}
+  }, [analysis]);
 
   return (
     <Card className="relative overflow-hidden border-neon-cyan/20">
@@ -189,22 +203,33 @@ export function PredictionCard({ analysis, onPlaceBet, betting }: PredictionCard
         </div>
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="flex gap-2">
         {analysis.recommendedSide !== "none" ? (
-          <Button className="w-full" onClick={onPlaceBet} disabled={betting || !canBet}>
-            {betting ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {t.analysis.placingBet}
-              </span>
-            ) : hasPrivateKey && !address ? (
-              `${t.analysis.directBet} - ${analysis.recommendedSide === "home" ? analysis.homeTeam : analysis.awayTeam}`
-            ) : canBet ? (
-              `${t.analysis.placeBet} - ${analysis.recommendedSide === "home" ? analysis.homeTeam : analysis.awayTeam}`
-            ) : (
-              t.common.connectWallet
-            )}
-          </Button>
+          serverTradingEnabled ? (
+            <Button className="w-full" onClick={onPlaceBet} disabled={betting || !canBet}>
+              {betting ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {t.analysis.placingBet}
+                </span>
+              ) : hasPrivateKey && !address ? (
+                `${t.analysis.directBet} - ${analysis.recommendedSide === "home" ? analysis.homeTeam : analysis.awayTeam}`
+              ) : canBet ? (
+                `${t.analysis.placeBet} - ${analysis.recommendedSide === "home" ? analysis.homeTeam : analysis.awayTeam}`
+              ) : (
+                t.common.connectWallet
+              )}
+            </Button>
+          ) : (
+            <>
+              <Button className="w-full" onClick={handleOpenPolymarket} variant="default" disabled={!analysis.polymarketUrl}>
+                {t.analysis.goToPolymarket}
+              </Button>
+              <Button className="w-[40%]" onClick={handleCopyOrder} variant="secondary">
+                {t.analysis.copyOrder}
+              </Button>
+            </>
+          )
         ) : (
           <Button className="w-full" variant="secondary" disabled>{t.analysis.noEdge}</Button>
         )}

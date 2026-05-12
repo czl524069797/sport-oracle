@@ -42,7 +42,7 @@ export function AnalysisPanel({ selectedGame, onAnalysisComplete }: AnalysisPane
       tokenId: analysis.tokenId,
       side: "BUY",
       outcome: analysis.recommendedOutcome,
-      amount: 10,
+      amount: 1,
       price: analysis.marketPrice,
     });
   };
