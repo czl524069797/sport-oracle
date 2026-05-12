@@ -4,12 +4,14 @@
 
 ## 1. 当前结论
 
-Sport Oracle 当前支持通过 RainbowKit + wagmi + viem 连接 EVM 钱包，运行网络配置为 Polygon。OKX 钱包可以接入，推荐优先使用两种方式：
+Sport Oracle 当前支持通过 RainbowKit + wagmi + viem 连接 EVM 钱包，运行网络配置为 Polygon。连接弹窗已显式加入 OKX Wallet 和 Binance Wallet，并保留 WalletConnect 与浏览器注入钱包兜底。
 
-- OKX Wallet 手机端：通过 WalletConnect 扫码连接。
-- OKX Wallet 浏览器插件：作为 EVM injected provider 连接，或后续增加 OKX 专属入口。
+- OKX Wallet：支持浏览器插件入口，也支持手机端通过 WalletConnect 扫码。
+- Binance Wallet：支持浏览器插件入口，也支持可用场景下的钱包连接兜底。
+- WalletConnect：作为手机钱包通用扫码兜底。
+- Injected Wallet：作为浏览器插件通用兜底。
 
-当前项目还没有单独展示“OKX 钱包”品牌入口。也就是说，OKX 能用，但是否在连接弹窗中明确显示为 OKX，取决于 RainbowKit 对当前浏览器插件和 WalletConnect 的识别结果。若要保证用户看到固定的“OKX 钱包”按钮，需要新增显式 OKX connector。
+如果用户没有安装对应插件，RainbowKit 会引导安装或使用可用的 WalletConnect 路径。
 
 ## 2. 环境变量配置
 
@@ -96,35 +98,38 @@ chains: [polygon]
 
 ### 4.2 OKX 钱包怎么连接
 
-OKX 钱包可以做到。
+OKX Wallet 已加入连接弹窗。
 
 推荐用户路径：
 
 1. 安装 OKX Wallet 浏览器插件，或打开 OKX Wallet 手机端。
 2. 点击页面右上角“连接钱包”。
-3. 如果弹窗里出现 OKX Wallet，直接选择。
-4. 如果没有出现 OKX Wallet：
-   - 手机端使用 WalletConnect 扫码。
-   - 浏览器插件可以尝试选择 injected/browser wallet 类型。
+3. 在 Recommended 分组中选择 OKX Wallet。
+4. 如果插件不可用，手机端使用 WalletConnect 扫码。
 5. 钱包连接成功后，检查网络是否为 Polygon。
 6. 如需站内签名登录，点击 Header 中的“签名登录”，确认 SIWE 签名。
 
-OKX 官方 EVM Provider 支持 `eth_requestAccounts`，插件侧会注入 `window.okxwallet`，并支持 `accountsChanged`、`chainChanged` 等事件。项目使用 wagmi/RainbowKit 后，不需要业务代码直接调用 `window.okxwallet` 才能完成常规连接；但如果要做“OKX 专属连接按钮”，可以基于该 provider 做显式适配。
+OKX 官方 EVM Provider 支持 `eth_requestAccounts`，插件侧会注入 `window.okxwallet`，并支持 `accountsChanged`、`chainChanged` 等事件。项目当前通过 RainbowKit 的 `okxWallet` connector 接入，不需要业务代码直接调用 `window.okxwallet`。
 
-### 4.3 OKX 专属入口改造建议
+### 4.3 Binance Wallet 怎么连接
 
-如果需要在连接弹窗中固定显示 OKX 钱包，建议做一个小改造：
+Binance Wallet 已加入连接弹窗。
 
-1. 在 `src/lib/wagmi.ts` 中从 RainbowKit wallet connectors 显式引入 OKX wallet connector。
-2. 保留 `walletConnectWallet` 作为手机扫码兜底。
-3. 保留 `injectedWallet` 作为浏览器插件兜底。
-4. 将 `appName` 从旧的 `NBA Predict DApp` 改成 `Sport Oracle`。
-5. 增加一个连接验收：OKX 插件、OKX 手机端 WalletConnect、错误网络切换。
+推荐用户路径：
+
+1. 安装 Binance Wallet 浏览器插件。
+2. 点击页面右上角“连接钱包”。
+3. 在 Recommended 分组中选择 Binance Wallet。
+4. 钱包连接成功后，检查网络是否为 Polygon。
+5. 如需站内签名登录，点击 Header 中的“签名登录”，确认 SIWE 签名。
+
+### 4.4 钱包连接验收
 
 验收标准：
 
 - OKX Wallet 插件可连接并显示地址。
 - OKX Wallet 手机端可通过 WalletConnect 连接。
+- Binance Wallet 插件可连接并显示地址。
 - 连接后 chain 为 Polygon，否则 RainbowKit 提示切链。
 - SIWE 签名登录成功，`localStorage.skill_jwt` 写入 token。
 - `/strategy` 能读取该钱包地址下的策略。
@@ -290,11 +295,12 @@ NBA_SERVICE_URL/api/trading/place
 - 尝试刷新页面后再点连接。
 - 手机端优先使用 WalletConnect 扫码。
 
-### 10.2 OKX 没有出现在连接弹窗
+### 10.2 OKX 或 Binance Wallet 没有出现在连接弹窗
 
+- 确认插件已安装并启用。
+- 刷新页面后重新点击“连接钱包”。
 - 使用 WalletConnect 扫码兜底。
-- 确认 OKX Wallet 插件已安装并启用。
-- 如果必须固定显示 OKX，需要新增显式 OKX connector。
+- 检查 `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` 是否有效。
 
 ### 10.3 提示错误网络
 
