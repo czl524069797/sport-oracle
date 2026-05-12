@@ -5,20 +5,21 @@ test.describe("SportOracle data quality smoke checks", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: /SportOracle/i })).toBeVisible();
-    await expect(page.getByText(/NBA/i).first()).toBeVisible();
+    await expect(page.getByText(/NBA .* Football .* Polymarket/i)).toBeVisible();
     await expect(page.getByText(/Polymarket/i).first()).toBeVisible();
   });
 
   test("NBA markets page handles empty data without crashing", async ({ page }) => {
-    await page.route("**/api/markets", async (route) => {
+    await page.route("**/api/markets**", async (route) => {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
           data: {
-            todayMarkets: [],
-            tomorrowMarkets: [],
+            today: [],
+            tomorrow: [],
             allTodayFinished: false,
+            labels: { todayLabel: "", tomorrowLabel: "" },
           },
         }),
       });
@@ -27,7 +28,7 @@ test.describe("SportOracle data quality smoke checks", () => {
     await page.route("**/api/overview**", async (route) => {
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ success: true, data: [] }),
+        body: JSON.stringify({ success: true, data: { category: "nba", markets: [] } }),
       });
     });
 
@@ -38,7 +39,7 @@ test.describe("SportOracle data quality smoke checks", () => {
   });
 
   test("NBA markets page shows a clear error state", async ({ page }) => {
-    await page.route("**/api/markets", async (route) => {
+    await page.route("**/api/markets**", async (route) => {
       await route.fulfill({
         status: 503,
         contentType: "application/json",
@@ -49,14 +50,15 @@ test.describe("SportOracle data quality smoke checks", () => {
     await page.route("**/api/overview**", async (route) => {
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ success: true, data: [] }),
+        body: JSON.stringify({ success: true, data: { category: "nba", markets: [] } }),
       });
     });
 
     await page.goto("/markets");
 
     await expect(page.getByRole("heading", { name: /NBA|NBA 市场/i })).toBeVisible();
-    await expect(page.getByText(/Error loading markets|加载市场失败|sports data unavailable/i)).toBeVisible();
+    await expect(page.getByText(/Error loading markets|加载市场失败/i)).toBeVisible();
+    await expect(page.getByText("sports data unavailable")).toBeVisible();
   });
 
   test("mobile dashboard remains readable", async ({ page }) => {
@@ -64,6 +66,22 @@ test.describe("SportOracle data quality smoke checks", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: /SportOracle/i })).toBeVisible();
-    await expect(page.getByText(/NBA/i).first()).toBeVisible();
+    await expect(page.getByText(/NBA .* Football .* Polymarket/i)).toBeVisible();
+  });
+
+  test("football API exposes clean upcoming match metadata", async ({ request }) => {
+    const response = await request.get("/api/football");
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.data.matches.length).toBeGreaterThan(0);
+
+    for (const match of body.data.matches) {
+      expect(match.homeTeam).not.toMatch(/Will |More Markets|\?/i);
+      expect(match.awayTeam).not.toMatch(/Will |More Markets|\?/i);
+      expect(new Date(match.matchDate).getTime()).toBeGreaterThan(Date.now() - 60 * 60 * 1000);
+      expect(match.polymarketUrl).toMatch(/^https:\/\/polymarket\.com\/event\//);
+    }
   });
 });

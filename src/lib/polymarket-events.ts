@@ -21,16 +21,23 @@ interface GammaEvent {
   volume: number;
   liquidity: number;
   markets: GammaMarket[];
+  tags?: GammaTag[];
 }
 
 interface GammaMarket {
   id: string;
   question: string;
-  outcomePrices: string;
-  outcomes: string;
+  outcomePrices: string | null;
+  outcomes: string | null;
   volume: string;
   active: boolean;
   closed: boolean;
+}
+
+interface GammaTag {
+  id: string;
+  label: string;
+  slug: string;
 }
 
 /**
@@ -48,21 +55,69 @@ const VS_PATTERN = /\bvs\.?\b/i;
 
 // Only treat matches within this many days as "recent matches"
 const MAX_MATCH_DAYS_AHEAD = 14;
+const RAW_EVENT_PAGE_SIZE = 100;
+const RAW_EVENT_MAX_PAGES = 5;
 
-function parseOutcomePrices(raw: string): number[] {
+function parseOutcomePrices(raw: string | null): number[] {
+  if (!raw) return [];
   try {
-    return JSON.parse(raw) as number[];
+    const parsed = JSON.parse(raw) as Array<number | string>;
+    return parsed.map(Number).filter((price) => Number.isFinite(price));
   } catch {
     return [];
   }
 }
 
-function parseOutcomes(raw: string): string[] {
+function parseOutcomes(raw: string | null): string[] {
+  if (!raw) return [];
   try {
-    return JSON.parse(raw) as string[];
+    const parsed = JSON.parse(raw) as unknown[];
+    return parsed.map(String);
   } catch {
     return [];
   }
+}
+
+function normalizeEntity(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b(fc|cf|afc|sc|ssc|ac|as|rc|rcd|cd|ud|sk|ec|club)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function includesEntity(text: string, entity: string): boolean {
+  const normalizedText = normalizeEntity(text);
+  const normalizedEntity = normalizeEntity(entity);
+  if (!normalizedEntity) return false;
+  if (normalizedText.includes(normalizedEntity)) return true;
+
+  const tokens = normalizedEntity.split(" ").filter((token) => token.length > 2);
+  return tokens.length >= 2 && tokens.every((token) => normalizedText.includes(token));
+}
+
+function isSupplementalMarketEvent(title: string): boolean {
+  return /\bmore markets\b/i.test(title);
+}
+
+function cleanMatchSide(value: string, side: "home" | "away"): string {
+  let cleaned = value.trim();
+  if (side === "home") {
+    cleaned = cleaned.replace(/^[a-z0-9 ]+:\s+/i, "");
+  }
+  return cleaned
+    .replace(/\s+-\s+more markets\s*$/i, "")
+    .replace(/\s+-\s+.*$/i, "")
+    .replace(/\s+\([^)]*\).*$/i, "")
+    .trim();
+}
+
+function getEventMatchDate(event: Pick<PolymarketEvent, "startDate" | "endDate">): string {
+  return event.endDate || event.startDate;
 }
 
 function transformMarket(m: GammaMarket): PolymarketEventMarket {
@@ -104,20 +159,31 @@ function toPolymarketEvent(
  * Fetch raw events from Gamma API by tag_id.
  */
 async function fetchRawEvents(tagId: string): Promise<GammaEvent[]> {
-  const url = `${GAMMA_URL}/events?tag_id=${tagId}&active=true&closed=false&limit=100&offset=0&order=volume&ascending=false`;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      console.error(
-        `[polymarket-events] Failed to fetch tag=${tagId}: ${res.status}`
-      );
-      return [];
+  const events: GammaEvent[] = [];
+
+  for (let page = 0; page < RAW_EVENT_MAX_PAGES; page += 1) {
+    const offset = page * RAW_EVENT_PAGE_SIZE;
+    const url = `${GAMMA_URL}/events?tag_id=${tagId}&active=true&closed=false&limit=${RAW_EVENT_PAGE_SIZE}&offset=${offset}&order=volume&ascending=false`;
+
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        console.error(
+          `[polymarket-events] Failed to fetch tag=${tagId}: ${res.status}`
+        );
+        break;
+      }
+
+      const pageEvents = (await res.json()) as GammaEvent[];
+      events.push(...pageEvents);
+      if (pageEvents.length < RAW_EVENT_PAGE_SIZE) break;
+    } catch (err) {
+      console.error(`[polymarket-events] Error fetching tag=${tagId}:`, err);
+      break;
     }
-    return (await res.json()) as GammaEvent[];
-  } catch (err) {
-    console.error(`[polymarket-events] Error fetching tag=${tagId}:`, err);
-    return [];
   }
+
+  return events;
 }
 
 /**
@@ -128,11 +194,13 @@ function parseTeamsFromTitle(title: string): {
   homeTeam: string;
   awayTeam: string;
 } | null {
+  if (isSupplementalMarketEvent(title)) return null;
+
   // Split on " vs. " or " vs "
   const parts = title.split(/\s+vs\.?\s+/i);
   if (parts.length < 2) return null;
-  const homeTeam = parts[0].trim();
-  const awayTeam = parts[1].trim();
+  const homeTeam = cleanMatchSide(parts[0], "home");
+  const awayTeam = cleanMatchSide(parts.slice(1).join(" vs "), "away");
   if (!homeTeam || !awayTeam) return null;
   return { homeTeam, awayTeam };
 }
@@ -152,9 +220,6 @@ function extractOdds(
   category: "football" | "esports"
 ): MatchOdds {
   const odds: MatchOdds = { homeWin: 0, awayWin: 0 };
-
-  const homeLower = homeTeam.toLowerCase();
-  const awayLower = awayTeam.toLowerCase();
 
   for (const market of event.markets) {
     const qLower = market.question.toLowerCase();
@@ -205,20 +270,16 @@ function extractOdds(
 
       // If outcomes are team names (esports pattern)
       if (
-        (o0.includes(homeLower.split(" ")[0]) ||
-          homeLower.includes(o0.split(" ")[0])) &&
-        (o1.includes(awayLower.split(" ")[0]) ||
-          awayLower.includes(o1.split(" ")[0]))
+        includesEntity(o0, homeTeam) &&
+        includesEntity(o1, awayTeam)
       ) {
         odds.homeWin = market.outcomePrices[0];
         odds.awayWin = market.outcomePrices[1];
         continue;
       }
       if (
-        (o1.includes(homeLower.split(" ")[0]) ||
-          homeLower.includes(o1.split(" ")[0])) &&
-        (o0.includes(awayLower.split(" ")[0]) ||
-          awayLower.includes(o0.split(" ")[0]))
+        includesEntity(o1, homeTeam) &&
+        includesEntity(o0, awayTeam)
       ) {
         odds.homeWin = market.outcomePrices[1];
         odds.awayWin = market.outcomePrices[0];
@@ -231,14 +292,14 @@ function extractOdds(
         market.outcomes[1].toLowerCase() === "no"
       ) {
         if (
-          qLower.includes(homeLower.split(" ")[0]) &&
+          includesEntity(qLower, homeTeam) &&
           (qLower.includes("win") || qLower.includes("winner"))
         ) {
           odds.homeWin = market.outcomePrices[0];
           continue;
         }
         if (
-          qLower.includes(awayLower.split(" ")[0]) &&
+          includesEntity(qLower, awayTeam) &&
           (qLower.includes("win") || qLower.includes("winner"))
         ) {
           odds.awayWin = market.outcomePrices[0];
@@ -257,12 +318,9 @@ function extractOdds(
         market.outcomes[0].toLowerCase() === "yes" &&
         (qLower.includes("win") || qLower.includes("winner"))
       ) {
-        if (qLower.includes(homeLower.split(" ")[0]) && odds.homeWin === 0) {
+        if (includesEntity(qLower, homeTeam) && odds.homeWin === 0) {
           odds.homeWin = market.outcomePrices[0];
-        } else if (
-          qLower.includes(awayLower.split(" ")[0]) &&
-          odds.awayWin === 0
-        ) {
+        } else if (includesEntity(qLower, awayTeam) && odds.awayWin === 0) {
           odds.awayWin = market.outcomePrices[0];
         }
       }
@@ -297,7 +355,7 @@ function eventToMatch(
     event,
     homeTeam: teams.homeTeam,
     awayTeam: teams.awayTeam,
-    matchDate: event.startDate || event.endDate,
+    matchDate: getEventMatchDate(event),
     odds,
     polymarketUrl: `https://polymarket.com/event/${event.slug}`,
   };
