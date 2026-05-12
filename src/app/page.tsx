@@ -77,27 +77,20 @@ function FeatureCard({
 function HeroSection({ t }: { t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <section className="relative overflow-hidden rounded-none border-y border-neon-cyan/10 bg-[#07111f] sm:rounded-[0] lg:-mx-4 lg:rounded-[32px] lg:border">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,159,255,0.15),transparent_45%),linear-gradient(90deg,rgba(10,20,35,0.9),rgba(3,8,20,0.72),rgba(10,20,35,0.9))]" />
-      <div className="absolute left-0 top-0 h-full w-full opacity-40 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_22%),radial-gradient(circle_at_20%_45%,rgba(0,255,255,0.15),transparent_20%),radial-gradient(circle_at_78%_36%,rgba(64,120,255,0.18),transparent_24%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.24)),linear-gradient(0deg,rgba(0,240,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.08)_1px,transparent_1px)] bg-[length:auto,48px_48px,48px_48px] [mask-image:linear-gradient(to_top,black,transparent)]" />
-      <div className="absolute left-[7%] top-[18%] h-72 w-72 rounded-full bg-neon-cyan/10 blur-3xl" />
-      <div className="absolute right-[10%] top-[14%] h-72 w-72 rounded-full bg-neon-blue/10 blur-3xl" />
+      <Image
+        src="/images/sport-oracle-main-realistic-2026-05-12.png"
+        alt=""
+        fill
+        priority
+        className="object-cover object-center opacity-85"
+        sizes="100vw"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,15,25,0.12),transparent_42%),linear-gradient(180deg,rgba(3,8,20,0.2),rgba(3,8,20,0.42)_50%,rgba(3,8,20,0.85)),linear-gradient(90deg,rgba(3,8,20,0.72),rgba(3,8,20,0.14)_46%,rgba(3,8,20,0.72))]" />
+      <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.38)),linear-gradient(0deg,rgba(0,240,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.08)_1px,transparent_1px)] bg-[length:auto,48px_48px,48px_48px] [mask-image:linear-gradient(to_top,black,transparent)]" />
 
-      <div className="relative px-4 pb-8 pt-10 sm:px-6 lg:px-10 lg:pb-10 lg:pt-8">
-        <div className="grid items-center gap-6 lg:grid-cols-[1fr_minmax(360px,560px)_1fr] lg:gap-2">
-          <div className="relative mx-auto flex h-[260px] w-full max-w-[360px] items-center justify-center lg:mx-0 lg:h-[560px] lg:max-w-none lg:justify-start">
-            <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-blue/20 blur-3xl lg:left-[42%] lg:h-64 lg:w-64" />
-            <Image
-              src="/images/football-player.png"
-              alt="football player"
-              width={512}
-              height={512}
-              priority
-              className="relative z-10 h-full w-auto object-contain drop-shadow-[0_0_36px_rgba(97,218,251,0.45)]"
-            />
-          </div>
-
-          <div className="relative z-10 text-center">
+      <div className="relative px-4 pb-8 pt-16 sm:px-6 lg:px-10 lg:pb-10 lg:pt-20">
+        <div className="mx-auto flex min-h-[480px] max-w-5xl items-center justify-center text-center lg:min-h-[620px]">
+          <div className="relative z-10">
             <h1 className="hero-title text-5xl font-black italic tracking-tight text-transparent md:text-7xl lg:text-[7rem]">
               SportOracle
             </h1>
@@ -123,21 +116,9 @@ function HeroSection({ t }: { t: ReturnType<typeof useI18n>["t"] }) {
             </div>
             <p className="mt-5 text-sm text-slate-400">{t.dashboard.connectPrompt}</p>
           </div>
-
-          <div className="relative mx-auto flex h-[250px] w-full max-w-[360px] items-center justify-center lg:mx-0 lg:h-[560px] lg:max-w-none lg:justify-end">
-            <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-cyan/20 blur-3xl lg:left-[58%] lg:h-64 lg:w-64" />
-            <Image
-              src="/images/basketball-player.png"
-              alt="basketball player"
-              width={1024}
-              height={1024}
-              priority
-              className="relative z-10 h-full w-auto object-contain drop-shadow-[0_0_36px_rgba(97,218,251,0.5)]"
-            />
-          </div>
         </div>
 
-        <div className="relative z-10 mt-8 grid gap-5 lg:mt-2 lg:grid-cols-3">
+        <div className="relative z-10 mt-6 grid gap-5 lg:grid-cols-3">
           <FeatureCard
             title={t.dashboard.aiAnalysis}
             description={t.dashboard.aiAnalysisDesc}
