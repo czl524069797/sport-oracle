@@ -1,8 +1,5 @@
 import type { AIAnalysisInput, AIAnalysisResult } from "@/types";
-
-const API_KEY = process.env.AI_API_KEY ?? "";
-const BASE_URL = process.env.AI_BASE_URL ?? "https://wzw.pp.ua/v1/";
-const MODEL = process.env.AI_MODEL ?? "grok-4";
+import { assertAIProviderReady, getAIProviderConfig } from "./ai-provider";
 
 function buildPrompt(input: AIAnalysisInput): string {
   const { game, homeStats, awayStats, homePlayers, awayPlayers, headToHead, marketPrice } = input;
@@ -237,11 +234,13 @@ export async function analyzeGame(
 ): Promise<AIAnalysisResult> {
   const userPrompt = buildPrompt(input);
   const langSuffix = LANGUAGE_INSTRUCTION[locale] ?? "";
+  const provider = getAIProviderConfig();
+  assertAIProviderReady(provider);
 
-  const url = `${BASE_URL.replace(/\/+$/, "")}/chat/completions`;
+  const url = `${provider.baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
   const requestBody = {
-    model: MODEL,
+    model: provider.model,
     messages: [
       { role: "system", content: SYSTEM_PROMPT + langSuffix },
       { role: "user", content: userPrompt },
@@ -249,15 +248,13 @@ export async function analyzeGame(
     temperature: 0.3,
     max_tokens: 4000,
     stream: false,
-    tool_choice: "none" as const,
-    tools: [],
   };
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${provider.apiKey}`,
     },
     body: JSON.stringify(requestBody),
   });

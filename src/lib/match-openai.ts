@@ -1,8 +1,5 @@
 import type { PolymarketMatch, MatchOdds } from "@/types";
-
-const API_KEY = process.env.AI_API_KEY ?? "";
-const BASE_URL = process.env.AI_BASE_URL ?? "https://wzw.pp.ua/v1/";
-const MODEL = process.env.AI_MODEL ?? "grok-4";
+import { assertAIProviderReady, getAIProviderConfig } from "./ai-provider";
 
 interface MatchAnalysisRaw {
   home_win_probability: number;
@@ -182,17 +179,19 @@ export async function analyzeMatch(
   const systemPrompt = category === "football" ? FOOTBALL_SYSTEM_PROMPT : ESPORTS_SYSTEM_PROMPT;
   const userPrompt = buildMatchPrompt(match, category);
   const langSuffix = LANGUAGE_INSTRUCTION[locale] ?? "";
+  const provider = getAIProviderConfig();
+  assertAIProviderReady(provider);
 
-  const url = `${BASE_URL.replace(/\/+$/, "")}/chat/completions`;
+  const url = `${provider.baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${provider.apiKey}`,
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: provider.model,
       messages: [
         { role: "system", content: systemPrompt + langSuffix },
         { role: "user", content: userPrompt },
@@ -200,8 +199,6 @@ export async function analyzeMatch(
       temperature: 0.3,
       max_tokens: 2000,
       stream: false,
-      tool_choice: "none" as const,
-      tools: [],
     }),
   });
 

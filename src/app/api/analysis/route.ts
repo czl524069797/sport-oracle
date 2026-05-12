@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTodayGames, getTomorrowGames } from "@/lib/nba-data";
 import {
   getNBASeasonMarkets,
-  getNBAGameMarkets,
   buildTeamOddsMap,
   enrichGamesWithAllOdds,
+  getUpcomingNBAGamesWithOdds,
 } from "@/lib/polymarket";
 import { runAnalysis } from "@/lib/ai-analyzer";
 
@@ -22,17 +21,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get games, season markets, AND single-game markets in parallel
-    const [todayGames, tomorrowGames, seasonMarkets, gameMarketsMap] = await Promise.all([
-      getTodayGames(),
-      getTomorrowGames(),
+    // Keep analysis aligned with /api/markets: Polymarket NBA single-game markets are
+    // the primary source for game ids, matchups, URLs, and game-level odds.
+    const [seasonMarkets, nbaGameData] = await Promise.all([
       getNBASeasonMarkets(),
-      getNBAGameMarkets(),
+      getUpcomingNBAGamesWithOdds(),
     ]);
 
-    const allGames = [...todayGames, ...tomorrowGames];
     const oddsMap = buildTeamOddsMap(seasonMarkets);
-    const gamesWithOdds = enrichGamesWithAllOdds(allGames, oddsMap, gameMarketsMap);
+    const gamesWithOdds = enrichGamesWithAllOdds(nbaGameData.games, oddsMap, nbaGameData.oddsMap);
 
     const target = gamesWithOdds.find((g) => g.game.gameId === gameId);
 

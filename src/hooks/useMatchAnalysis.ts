@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { MatchAnalysisWithEdge, ApiResponse, PolymarketMatch } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function useMatchAnalysis() {
   const [analysis, setAnalysis] = useState<MatchAnalysisWithEdge | null>(null);
@@ -21,7 +22,7 @@ export function useMatchAnalysis() {
           body: JSON.stringify({ match, category, locale }),
         });
 
-        const data: ApiResponse<MatchAnalysisWithEdge> = await res.json();
+        const data: ApiResponse<MatchAnalysisWithEdge> = await readApiResponse(res);
 
         if (data.success && data.data) {
           setAnalysis(data.data);

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { AnalysisWithEdge, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function useAnalysis() {
   const [analysis, setAnalysis] = useState<AnalysisWithEdge | null>(null);
@@ -18,7 +19,7 @@ export function useAnalysis() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId, locale }),
       });
-      const data: ApiResponse<AnalysisWithEdge> = await res.json();
+      const data: ApiResponse<AnalysisWithEdge> = await readApiResponse(res);
       if (data.success && data.data) {
         setAnalysis(data.data);
       } else {
