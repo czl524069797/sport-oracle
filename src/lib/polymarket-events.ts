@@ -1,4 +1,5 @@
 import type {
+  EsportsGameKey,
   PolymarketEvent,
   PolymarketEventMarket,
   PolymarketMatch,
@@ -45,10 +46,18 @@ interface GammaTag {
  *
  * tag_id=100350  → Soccer / Football
  * tag_id=64      → Esports
+ * tag_id=65      → League of Legends
+ * tag_id=100780  → Counter-Strike 2
+ * tag_id=101672  → Valorant
  * tag_id=100639  → Individual match/game bets (single-game, not futures)
  */
 const SOCCER_TAG_ID = "100350";
 const ESPORTS_TAG_ID = "64";
+const ESPORTS_GAME_TAG_IDS: Record<EsportsGameKey, string> = {
+  lol: "65",
+  cs2: "100780",
+  valorant: "101672",
+};
 
 // Regex to detect "vs" or "vs." in event titles
 const VS_PATTERN = /\bvs\.?\b/i;
@@ -376,7 +385,7 @@ async function fetchMatchesAndEvents(
   category: "football" | "esports",
   limit: number = 20
 ): Promise<{ matches: PolymarketMatch[]; events: PolymarketEvent[] }> {
-  return cached(`poly:${category}-matches`, async () => {
+  return cached(`poly:${category}:${categoryTagId}-matches`, async () => {
     const categoryRaw = await fetchRawEvents(categoryTagId);
     const allEventsMap = new Map<string, PolymarketEvent>();
     const matchesMap = new Map<string, PolymarketMatch>();
@@ -434,9 +443,10 @@ export async function getFootballMatchesAndEvents(
 }
 
 export async function getEsportsMatchesAndEvents(
-  limit = 20
+  limit = 20,
+  game?: EsportsGameKey
 ): Promise<{ matches: PolymarketMatch[]; events: PolymarketEvent[] }> {
-  return fetchMatchesAndEvents(ESPORTS_TAG_ID, "esports", limit);
+  return fetchMatchesAndEvents(game ? ESPORTS_GAME_TAG_IDS[game] : ESPORTS_TAG_ID, "esports", limit);
 }
 
 // Keep backward-compatible exports

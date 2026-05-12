@@ -1,6 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useI18n } from "@/i18n";
 import type { FuturesMarket } from "@/types";
 
@@ -61,10 +62,13 @@ export function SeasonOverview({ markets, loading, error, theme }: SeasonOvervie
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-52 w-full" />
-        ))}
+      <div>
+        <LoadingState label={t.common.loading} hint={t.overview.loadingHint} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-52 w-full" />
+          ))}
+        </div>
       </div>
     );
   }

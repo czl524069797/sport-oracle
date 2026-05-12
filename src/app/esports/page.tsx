@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePolymarketEvents } from "@/hooks/usePolymarketEvents";
 import { useOverview } from "@/hooks/useOverview";
 import { EventList } from "@/components/events/EventList";
@@ -7,6 +8,7 @@ import { SeasonOverview } from "@/components/events/SeasonOverview";
 import { Button } from "@/components/ui/button";
 import { PageVisual } from "@/components/visuals/PageVisual";
 import { useI18n } from "@/i18n";
+import type { EsportsGameKey } from "@/types";
 
 function GamepadIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
@@ -22,9 +24,15 @@ function GamepadIcon({ size = 24, className = "" }: { size?: number; className?:
 }
 
 export default function EsportsPage() {
-  const { matches, events, loading, error, refresh } = usePolymarketEvents("esports");
-  const { markets: overviewMarkets, loading: overviewLoading, error: overviewError } = useOverview("esports");
+  const [selectedGame, setSelectedGame] = useState<EsportsGameKey>("lol");
+  const { matches, events, loading, error, refresh } = usePolymarketEvents("esports", selectedGame);
+  const { markets: overviewMarkets, loading: overviewLoading, error: overviewError } = useOverview("esports", selectedGame);
   const { t } = useI18n();
+  const gameTabs: Array<{ key: EsportsGameKey; label: string }> = [
+    { key: "lol", label: t.esports.games.lol },
+    { key: "cs2", label: t.esports.games.cs2 },
+    { key: "valorant", label: t.esports.games.valorant },
+  ];
 
   return (
     <div className="space-y-10">
@@ -61,6 +69,26 @@ export default function EsportsPage() {
             </Button>
           </div>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-violet-500/15 bg-violet-500/[0.04] p-2">
+        {gameTabs.map((game) => {
+          const active = selectedGame === game.key;
+          return (
+            <button
+              key={game.key}
+              type="button"
+              onClick={() => setSelectedGame(game.key)}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                active
+                  ? "bg-violet-500 text-white shadow-[0_0_18px_rgba(139,92,246,0.35)]"
+                  : "text-muted-foreground hover:bg-violet-500/10 hover:text-violet-200"
+              }`}
+            >
+              {game.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Season Overview */}

@@ -11,7 +11,7 @@ export function useMarkets() {
     todayLabel: "",
     tomorrowLabel: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMarkets = useCallback(async () => {

@@ -80,6 +80,7 @@ const en: Translations = {
     refreshing: "Refreshing...",
     noMarkets: "No NBA markets available today",
     noMarketsHint: "Check back when games are scheduled",
+    loadingHint: "Loading NBA schedule, Polymarket lines, and season odds",
     errorLoading: "Error loading markets",
     analysis: "Analysis",
     home: "Home",
@@ -151,6 +152,7 @@ const en: Translations = {
     subtitle: "Configure your AI betting strategy parameters",
     cardTitle: "Betting Strategy",
     connectPrompt: "Connect your wallet to configure strategies",
+    loadingHint: "Loading saved strategies",
     name: "Strategy Name",
     minConfidence: "Min Confidence (0-1)",
     maxBet: "Max Bet (USDC)",
@@ -194,7 +196,12 @@ const en: Translations = {
     title: "Esports Predictions",
     subtitle: "Hot esports events on Polymarket",
     banner: "Esports Event Tracker",
-    bannerDesc: "League of Legends - CS2 - Valorant - Dota 2 - Hot prediction markets",
+    bannerDesc: "League of Legends - CS2 - Valorant - Hot prediction markets",
+    games: {
+      lol: "League of Legends",
+      cs2: "CS2",
+      valorant: "Valorant",
+    },
   },
 
   // Football Analysis (WhoScored/Dongqiudi style)
@@ -237,6 +244,7 @@ const en: Translations = {
     refreshing: "Refreshing...",
     markets: "markets",
     errorLoading: "Error loading events",
+    loadingHint: "Loading events, match markets, and prices",
     noEvents: "No hot events available",
     noEventsHint: "No events found on Polymarket. Check back later",
     viewOnPolymarket: "View on Polymarket",
@@ -261,6 +269,7 @@ const en: Translations = {
     seasonTitle: "Season Overview",
     futures: "Futures / Odds",
     dailyMatches: "Today / Tomorrow Matches",
+    loadingHint: "Loading futures and top markets",
     outcomeNames: {} as Record<string, string>,
   },
 };

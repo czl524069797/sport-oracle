@@ -3,6 +3,7 @@
 import { MarketCard } from "./MarketCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useI18n } from "@/i18n";
 import type { GameWithOdds, GameAnalysisSummary } from "@/types";
 
@@ -77,10 +78,13 @@ export function MarketList({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-72 w-full" />
-        ))}
+      <div>
+        <LoadingState label={t.common.loading} hint={t.markets.loadingHint} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-72 w-full" />
+          ))}
+        </div>
       </div>
     );
   }

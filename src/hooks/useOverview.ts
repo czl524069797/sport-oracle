@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { FuturesMarket, ApiResponse } from "@/types";
+import type { EsportsGameKey, FuturesMarket, ApiResponse } from "@/types";
 
-export function useOverview(category: "nba" | "football" | "esports") {
+export function useOverview(category: "nba" | "football" | "esports", esportsGame?: EsportsGameKey) {
   const [markets, setMarkets] = useState<FuturesMarket[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOverview = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/overview?category=${category}`);
+      const params = new URLSearchParams({ category });
+      if (category === "esports" && esportsGame) params.set("game", esportsGame);
+      const res = await fetch(`/api/overview?${params.toString()}`);
       const data: ApiResponse<{ category: string; markets: FuturesMarket[] }> = await res.json();
       if (data.success && data.data) {
         setMarkets(data.data.markets);
@@ -24,7 +26,7 @@ export function useOverview(category: "nba" | "football" | "esports") {
     } finally {
       setLoading(false);
     }
-  }, [category]);
+  }, [category, esportsGame]);
 
   useEffect(() => {
     fetchOverview();

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useAccount } from "wagmi";
 import { useI18n } from "@/i18n";
 import type { StrategyConfig, ApiResponse } from "@/types";
@@ -13,18 +14,27 @@ export function StrategyForm() {
   const { t } = useI18n();
   const [strategies, setStrategies] = useState<StrategyConfig[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [form, setForm] = useState<StrategyConfig>({
     name: "Default Strategy", isActive: true, minConfidence: 0.65,
     maxBetAmount: 1, dailyBudget: 10, autoExecute: false,
   });
 
   const fetchStrategies = useCallback(async () => {
-    if (!address) return;
-    const res = await fetch(`/api/strategy?wallet=${address}`);
-    const data: ApiResponse<StrategyConfig[]> = await res.json();
-    if (data.success && data.data) {
-      setStrategies(data.data);
-      if (data.data.length > 0) setForm(data.data[0]);
+    if (!address) {
+      setFetching(false);
+      return;
+    }
+    setFetching(true);
+    try {
+      const res = await fetch(`/api/strategy?wallet=${address}`);
+      const data: ApiResponse<StrategyConfig[]> = await res.json();
+      if (data.success && data.data) {
+        setStrategies(data.data);
+        if (data.data.length > 0) setForm(data.data[0]);
+      }
+    } finally {
+      setFetching(false);
     }
   }, [address]);
 
@@ -65,6 +75,7 @@ export function StrategyForm() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {fetching && <LoadingState label={t.common.loading} hint={t.strategy.loadingHint} />}
         <div>
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.strategy.name}</label>
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5" />

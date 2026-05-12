@@ -279,6 +279,8 @@ export interface CategoryOverview {
   markets: FuturesMarket[];
 }
 
+export type EsportsGameKey = "lol" | "cs2" | "valorant";
+
 // ============= Match Odds Types (Football / Esports / NBA single-game) =============
 
 export interface MatchOdds {

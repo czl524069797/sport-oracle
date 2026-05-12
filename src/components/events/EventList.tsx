@@ -2,6 +2,7 @@
 
 import { EventCard, MatchCard } from "./EventCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useI18n } from "@/i18n";
 import type { PolymarketEvent, PolymarketMatch } from "@/types";
 
@@ -19,10 +20,13 @@ export function EventList({ events, matches, loading, error, theme, emptyIcon }:
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Skeleton key={i} className="h-56 w-full" />
-        ))}
+      <div>
+        <LoadingState label={t.common.loading} hint={t.events.loadingHint} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-56 w-full" />
+          ))}
+        </div>
       </div>
     );
   }

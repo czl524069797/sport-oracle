@@ -117,6 +117,7 @@ const zh = {
     refreshing: "刷新中...",
     noMarkets: "今日暂无 NBA 市场",
     noMarketsHint: "有比赛时再来看看",
+    loadingHint: "正在加载 NBA 赛程、Polymarket 盘口和赛季赔率",
     errorLoading: "加载市场失败",
     analysis: "分析",
     home: "主场",
@@ -190,6 +191,7 @@ const zh = {
     subtitle: "配置你的 AI 下注策略参数",
     cardTitle: "下注策略",
     connectPrompt: "连接钱包来配置策略",
+    loadingHint: "正在加载已保存策略",
     name: "策略名称",
     minConfidence: "最低置信度 (0-1)",
     maxBet: "单注上限 (USDC)",
@@ -237,7 +239,12 @@ const zh = {
     title: "电竞预测",
     subtitle: "Polymarket 热门电竞赛事",
     banner: "电竞赛事追踪",
-    bannerDesc: "英雄联盟 · CS2 · Valorant · Dota 2 · 热门赛事预测市场",
+    bannerDesc: "英雄联盟 · CS2 · Valorant · 热门赛事预测市场",
+    games: {
+      lol: "英雄联盟",
+      cs2: "CS2",
+      valorant: "Valorant",
+    },
   },
 
   // Football Analysis (WhoScored/Dongqiudi style)
@@ -281,6 +288,7 @@ const zh = {
     refreshing: "刷新中...",
     markets: "个市场",
     errorLoading: "加载赛事失败",
+    loadingHint: "正在加载赛事、单场盘口和市场赔率",
     noEvents: "暂无热门赛事",
     noEventsHint: "Polymarket 上暂无相关赛事，请稍后再来",
     viewOnPolymarket: "查看 Polymarket",
@@ -306,6 +314,7 @@ const zh = {
     seasonTitle: "赛季概览",
     futures: "期货/赔率",
     dailyMatches: "今日 / 明日赛事",
+    loadingHint: "正在加载赛季期货和热门市场",
     // Outcome name translations (Polymarket English → Chinese)
     outcomeNames: {
       // Football leagues (following zhibo8 convention)

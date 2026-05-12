@@ -1,4 +1,4 @@
-import type { FuturesMarket, FuturesOutcome } from "@/types";
+import type { EsportsGameKey, FuturesMarket, FuturesOutcome } from "@/types";
 import { cached } from "@/lib/cache";
 
 const GAMMA_URL =
@@ -140,7 +140,14 @@ export async function getFootballOverview(): Promise<FuturesMarket[]> {
 }
 
 // ====== Esports Season Overview ======
-// tag_id=64 for esports; pick events with 10+ markets
-export async function getEsportsOverview(): Promise<FuturesMarket[]> {
-  return cached("overview:esports", () => fetchFuturesByTagVolume("64", 10, 4, 5), TEN_MINUTES);
+const ESPORTS_OVERVIEW_TAG_IDS: Record<EsportsGameKey, string> = {
+  lol: "65",
+  cs2: "100780",
+  valorant: "101672",
+};
+
+// Use game-specific tags to avoid mixing unrelated esports titles.
+export async function getEsportsOverview(game: EsportsGameKey = "lol"): Promise<FuturesMarket[]> {
+  const tagId = ESPORTS_OVERVIEW_TAG_IDS[game];
+  return cached(`overview:esports:${game}`, () => fetchFuturesByTagVolume(tagId, 4, 4, 5), TEN_MINUTES);
 }

@@ -12,10 +12,13 @@ export function BetHistory() {
   const { address } = useAccount();
   const { t } = useI18n();
   const [bets, setBets] = useState<BetRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchBets = useCallback(async () => {
-    if (!address) return;
+    if (!address) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/betting?wallet=${address}`);
