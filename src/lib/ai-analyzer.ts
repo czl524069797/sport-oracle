@@ -170,36 +170,44 @@ export async function runAnalysis(
     polymarketUrl: gameOdds?.polymarketUrl,
   };
 
-  // Persist to database
-  await prisma.analysis.create({
-    data: {
-      marketId,
-      conditionId,
-      homeTeam: game.homeTeam.teamName,
-      awayTeam: game.awayTeam.teamName,
-      gameDate: new Date(game.gameDate),
-      homeWinProb: aiResult.homeWinProbability,
-      awayWinProb: aiResult.awayWinProbability,
-      confidence: aiResult.confidence,
-      reasoning: JSON.stringify({
-        reasoning: aiResult.reasoning,
-        keyFactors: aiResult.keyFactors,
-        spreadAnalysis: aiResult.spreadAnalysis,
-        totalPointsAnalysis: aiResult.totalPointsAnalysis,
-        newsHighlights: aiResult.newsHighlights,
-      }),
-      nbaData: JSON.stringify({
-        homeStats,
-        awayStats,
-        headToHead: h2h,
-        marketHomeProb,
-        marketAwayProb,
-        hasGameOdds,
-      }),
-      marketPrice: marketHomeProb,
-      edgePercent: Math.round(edgeCalc.bestEdge * 100) / 100,
-    },
-  });
+  // Persisting analysis is useful locally, but it must not block the user-facing
+  // analysis response on serverless deployments where SQLite may be read-only.
+  try {
+    await prisma.analysis.create({
+      data: {
+        marketId,
+        conditionId,
+        homeTeam: game.homeTeam.teamName,
+        awayTeam: game.awayTeam.teamName,
+        gameDate: new Date(game.gameDate),
+        homeWinProb: aiResult.homeWinProbability,
+        awayWinProb: aiResult.awayWinProbability,
+        confidence: aiResult.confidence,
+        reasoning: JSON.stringify({
+          reasoning: aiResult.reasoning,
+          keyFactors: aiResult.keyFactors,
+          spreadAnalysis: aiResult.spreadAnalysis,
+          totalPointsAnalysis: aiResult.totalPointsAnalysis,
+          newsHighlights: aiResult.newsHighlights,
+        }),
+        nbaData: JSON.stringify({
+          homeStats,
+          awayStats,
+          headToHead: h2h,
+          marketHomeProb,
+          marketAwayProb,
+          hasGameOdds,
+        }),
+        marketPrice: marketHomeProb,
+        edgePercent: Math.round(edgeCalc.bestEdge * 100) / 100,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[ai-analyzer] Failed to persist analysis:",
+      error instanceof Error ? error.message : error
+    );
+  }
 
   return result;
 }
