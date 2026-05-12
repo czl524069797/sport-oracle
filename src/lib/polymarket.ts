@@ -11,11 +11,14 @@ const GAMMA_URL =
   process.env.POLYMARKET_GAMMA_URL ?? "https://gamma-api.polymarket.com";
 const CLOB_URL =
   process.env.POLYMARKET_API_URL ?? "https://clob.polymarket.com";
+const ESPN_SCOREBOARD_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const FIVE_MINUTES = 5 * 60 * 1000;
 const RAW_EVENT_PAGE_SIZE = 100;
 const RAW_EVENT_MAX_PAGES = 4;
+const NBA_UPCOMING_DAYS = 7;
 
 // NBA team name variants for matching market groupItemTitle → team name
 const TEAM_NAME_MAP: Record<string, string[]> = {
@@ -313,6 +316,44 @@ interface GammaMatchEvent {
   tags?: Array<{ id: string; label?: string; slug?: string }>;
 }
 
+interface ESPNScoreboardResponse {
+  events?: ESPNEvent[];
+}
+
+interface ESPNEvent {
+  id: string;
+  date: string;
+  competitions?: Array<{
+    status?: {
+      type?: {
+        description?: string;
+      };
+    };
+    competitors?: ESPNCompetitor[];
+  }>;
+}
+
+interface ESPNCompetitor {
+  homeAway?: "home" | "away";
+  team?: {
+    id?: string;
+    displayName?: string;
+    abbreviation?: string;
+  };
+  records?: Array<{
+    name?: string;
+    type?: string;
+    summary?: string;
+  }>;
+}
+
+interface ParsedNBAEvent {
+  event: GammaMatchEvent;
+  team1: string;
+  team2: string;
+  odds: NBAGameOdds;
+}
+
 // NBA-related keywords to filter match-tag events
 const NBA_KEYWORDS = [
   "nba",
@@ -377,6 +418,84 @@ function buildTeamInfo(teamName: string) {
     teamAbbreviation: metadata.abbreviation,
     record: "0-0",
   };
+}
+
+function getESPNDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+function getESPNDateRange(days: number): string {
+  const start = new Date();
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + days);
+  return `${getESPNDateKey(start)}-${getESPNDateKey(end)}`;
+}
+
+function getESPNRecord(
+  competitor: ESPNCompetitor,
+  type: "total" | "home" | "road"
+): string | undefined {
+  return competitor.records?.find((record) => {
+    const recordType = record.type?.toLowerCase();
+    const recordName = record.name?.toLowerCase();
+    return recordType === type || recordName === type;
+  })?.summary;
+}
+
+function buildTeamInfoFromESPN(competitor: ESPNCompetitor) {
+  const canonicalName = matchToNBATeam(competitor.team?.displayName ?? "");
+  if (!canonicalName) return null;
+
+  const base = buildTeamInfo(canonicalName);
+  return {
+    ...base,
+    teamAbbreviation: competitor.team?.abbreviation ?? base.teamAbbreviation,
+    record: getESPNRecord(competitor, "total") ?? base.record,
+    homeRecord: getESPNRecord(competitor, "home"),
+    awayRecord: getESPNRecord(competitor, "road"),
+  };
+}
+
+async function fetchESPNUpcomingNBAGames(days = NBA_UPCOMING_DAYS): Promise<NBAGame[]> {
+  const range = getESPNDateRange(days);
+  const res = await fetch(`${ESPN_SCOREBOARD_URL}?dates=${range}`, {
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) {
+    console.error(`[polymarket] ESPN scoreboard failed: ${res.status}`);
+    return [];
+  }
+
+  const data = (await res.json()) as ESPNScoreboardResponse;
+  const now = Date.now();
+  const games: NBAGame[] = [];
+
+  for (const event of data.events ?? []) {
+    const competition = event.competitions?.[0];
+    const competitors = competition?.competitors ?? [];
+    const home = competitors.find((competitor) => competitor.homeAway === "home");
+    const away = competitors.find((competitor) => competitor.homeAway === "away");
+    if (!home || !away) continue;
+
+    const homeTeam = buildTeamInfoFromESPN(home);
+    const awayTeam = buildTeamInfoFromESPN(away);
+    if (!homeTeam || !awayTeam) continue;
+
+    const gameTime = new Date(event.date).getTime();
+    if (!Number.isFinite(gameTime) || gameTime < now - 2 * 60 * 60 * 1000) continue;
+
+    games.push({
+      gameId: event.id,
+      gameDate: event.date,
+      homeTeam,
+      awayTeam,
+      status: competition?.status?.type?.description ?? "Scheduled",
+    });
+  }
+
+  return games.sort(
+    (a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime()
+  );
 }
 
 function hasTag(event: GammaMatchEvent, tagId: string): boolean {
@@ -477,52 +596,134 @@ async function fetchRawNBAEvents(): Promise<GammaMatchEvent[]> {
   return events;
 }
 
+function parseNBAEvent(event: GammaMatchEvent): ParsedNBAEvent | null {
+  if (!hasTag(event, "100639")) return null;
+
+  const teams = parseNBATeamsFromTitle(event.title);
+  if (!teams) return null;
+
+  const team1 = matchToNBATeam(teams.team1);
+  const team2 = matchToNBATeam(teams.team2);
+  if (!team1 || !team2) return null;
+
+  return {
+    event,
+    team1,
+    team2,
+    odds: extractNBAGameOdds(event, team1, team2),
+  };
+}
+
+function reverseNBAGameOdds(odds: NBAGameOdds): NBAGameOdds {
+  return {
+    ...odds,
+    moneylineHome: odds.moneylineAway,
+    moneylineAway: odds.moneylineHome,
+  };
+}
+
+function sameMatchup(game: NBAGame, parsed: ParsedNBAEvent): boolean {
+  const homeTeam = game.homeTeam.teamName;
+  const awayTeam = game.awayTeam.teamName;
+  return (
+    (parsed.team1 === homeTeam && parsed.team2 === awayTeam) ||
+    (parsed.team1 === awayTeam && parsed.team2 === homeTeam)
+  );
+}
+
+function orientOddsForGame(game: NBAGame, parsed: ParsedNBAEvent): NBAGameOdds {
+  if (
+    parsed.team1 === game.homeTeam.teamName &&
+    parsed.team2 === game.awayTeam.teamName
+  ) {
+    return parsed.odds;
+  }
+
+  return reverseNBAGameOdds(parsed.odds);
+}
+
+function findClosestNBAEvent(
+  game: NBAGame,
+  parsedEvents: ParsedNBAEvent[]
+): ParsedNBAEvent | null {
+  const targetTime = new Date(game.gameDate).getTime();
+  let closest: ParsedNBAEvent | null = null;
+  let closestDiff = Number.POSITIVE_INFINITY;
+
+  for (const parsed of parsedEvents) {
+    if (!sameMatchup(game, parsed)) continue;
+
+    const eventTime = new Date(parsed.event.endDate).getTime();
+    if (!Number.isFinite(eventTime)) continue;
+
+    const diff = Math.abs(eventTime - targetTime);
+    if (diff < closestDiff) {
+      closest = parsed;
+      closestDiff = diff;
+    }
+  }
+
+  return closest;
+}
+
 export async function getUpcomingNBAGamesWithOdds(): Promise<{
   games: NBAGame[];
   oddsMap: Map<string, NBAGameOdds>;
 }> {
   return cached("poly:nba-upcoming-games", async () => {
     try {
-      const rawEvents = await fetchRawNBAEvents();
+      const [rawEvents, espnGames] = await Promise.all([
+        fetchRawNBAEvents(),
+        fetchESPNUpcomingNBAGames(),
+      ]);
       const now = Date.now();
-      const gamesMap = new Map<string, NBAGame>();
+      const parsedEvents = rawEvents
+        .map(parseNBAEvent)
+        .filter((event): event is ParsedNBAEvent => Boolean(event));
+      const fallbackGamesMap = new Map<string, NBAGame>();
       const oddsMap = new Map<string, NBAGameOdds>();
 
-      for (const event of rawEvents) {
-        if (!hasTag(event, "100639")) continue;
-        if (!event.endDate || new Date(event.endDate).getTime() < now - 60 * 60 * 1000) continue;
+      for (const parsed of parsedEvents) {
+        const eventTime = new Date(parsed.event.endDate).getTime();
+        if (!Number.isFinite(eventTime)) continue;
 
-        const teams = parseNBATeamsFromTitle(event.title);
-        if (!teams) continue;
+        const key = `${parsed.team1}|${parsed.team2}`;
+        const reverseKey = `${parsed.team2}|${parsed.team1}`;
+        if (!oddsMap.has(key)) oddsMap.set(key, parsed.odds);
+        if (!oddsMap.has(reverseKey)) {
+          oddsMap.set(reverseKey, reverseNBAGameOdds(parsed.odds));
+        }
 
-        const homeTeam = matchToNBATeam(teams.team1);
-        const awayTeam = matchToNBATeam(teams.team2);
-        if (!homeTeam || !awayTeam) continue;
+        if (eventTime < now - 36 * 60 * 60 * 1000) continue;
 
-        const game: NBAGame = {
-          gameId: event.id,
-          gameDate: event.endDate,
-          homeTeam: buildTeamInfo(homeTeam),
-          awayTeam: buildTeamInfo(awayTeam),
-          status: new Date(event.endDate).getTime() <= now ? "Live" : "Scheduled",
-        };
-        const odds = extractNBAGameOdds(event, homeTeam, awayTeam);
-        const key = `${homeTeam}|${awayTeam}`;
+        fallbackGamesMap.set(parsed.event.id, {
+          gameId: parsed.event.id,
+          gameDate: parsed.event.endDate,
+          homeTeam: buildTeamInfo(parsed.team1),
+          awayTeam: buildTeamInfo(parsed.team2),
+          status: eventTime <= now ? "Live" : "Scheduled",
+        });
+      }
 
-        gamesMap.set(event.id, game);
-        oddsMap.set(event.id, odds);
-        oddsMap.set(key, odds);
-        oddsMap.set(`${awayTeam}|${homeTeam}`, {
-          ...odds,
-          moneylineHome: odds.moneylineAway,
-          moneylineAway: odds.moneylineHome,
+      const games = espnGames.length > 0
+        ? espnGames
+        : Array.from(fallbackGamesMap.values()).sort(
+          (a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime()
+        );
+
+      for (const game of games) {
+        const closest = findClosestNBAEvent(game, parsedEvents);
+        if (!closest) continue;
+
+        const orientedOdds = orientOddsForGame(game, closest);
+        oddsMap.set(game.gameId, {
+          ...orientedOdds,
+          polymarketUrl: `https://polymarket.com/event/${closest.event.slug}`,
         });
       }
 
       return {
-        games: Array.from(gamesMap.values()).sort(
-          (a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime()
-        ),
+        games,
         oddsMap,
       };
     } catch (err) {

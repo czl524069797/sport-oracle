@@ -41,7 +41,7 @@ const variantConfig = {
   strategy: {
     accent: "amber",
     icon: SlidersHorizontal,
-    image: "/images/generated/sport-oracle-nba-markets-2026-05-12.png",
+    image: "/images/generated/sport-oracle-strategy-2026-05-12.png",
     glow: "from-amber-400/30 via-neon-orange/15 to-transparent",
     line: "stroke-amber-400",
     fill: "bg-amber-400",

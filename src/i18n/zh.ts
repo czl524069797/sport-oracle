@@ -132,6 +132,7 @@ const zh = {
     runAnalysis: "运行 AI 分析",
     aiAnalyzing: "AI 正在分析比赛...",
     aiAnalyzingHint: "正在处理统计数据、伤病信息和对战记录",
+    upcomingGames: "近期比赛",
     todayGames: "今日比赛",
     tomorrowGames: "明日比赛",
     allTodayFinished: "今日比赛已全部结束，以下是明日比赛",

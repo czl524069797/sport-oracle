@@ -116,7 +116,7 @@ export function MarketList({
     );
   }
 
-  const todayTitle = t.markets.todayGames;
+  const todayTitle = t.markets.upcomingGames;
   const tomorrowTitle = t.markets.tomorrowGames;
 
   return (

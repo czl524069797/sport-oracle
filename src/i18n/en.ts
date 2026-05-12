@@ -95,6 +95,7 @@ const en: Translations = {
     runAnalysis: "Run AI Analysis",
     aiAnalyzing: "AI is analyzing the game...",
     aiAnalyzingHint: "Crunching stats, injuries, and matchup data",
+    upcomingGames: "Upcoming Games",
     todayGames: "Today's Games",
     tomorrowGames: "Tomorrow's Games",
     allTodayFinished: "Today's games are all finished. Here are tomorrow's games",
