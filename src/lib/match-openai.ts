@@ -1,5 +1,5 @@
 import type { PolymarketMatch, MatchOdds } from "@/types";
-import { assertAIProviderReady, getAIProviderConfig } from "./ai-provider";
+import { fetchAIChatCompletion } from "./ai-provider";
 
 interface MatchAnalysisRaw {
   home_win_probability: number;
@@ -179,35 +179,17 @@ export async function analyzeMatch(
   const systemPrompt = category === "football" ? FOOTBALL_SYSTEM_PROMPT : ESPORTS_SYSTEM_PROMPT;
   const userPrompt = buildMatchPrompt(match, category);
   const langSuffix = LANGUAGE_INSTRUCTION[locale] ?? "";
-  const provider = getAIProviderConfig();
-  assertAIProviderReady(provider);
 
-  const url = `${provider.baseUrl.replace(/\/+$/, "")}/chat/completions`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${provider.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: provider.model,
-      messages: [
-        { role: "system", content: systemPrompt + langSuffix },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
-      stream: false,
-    }),
+  const rawText = await fetchAIChatCompletion({
+    messages: [
+      { role: "system", content: systemPrompt + langSuffix },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: 0.3,
+    max_tokens: 2000,
+    stream: false,
   });
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "Unknown error");
-    throw new Error(`AI API error ${res.status}: ${errText}`);
-  }
-
-  const rawText = await res.text();
   const content = extractContent(rawText);
 
   if (!content) {

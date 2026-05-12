@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from "react";
 import type { DashboardStats, ApiResponse, BetRecord } from "@/types";
 import { formatUSD, formatPercent } from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { readApiResponse } from "@/lib/api-response";
 
 function StatCard({
   title,
@@ -181,7 +182,7 @@ export default function DashboardPage() {
     if (!address) return;
     try {
       const res = await fetch(`/api/betting?wallet=${address}`);
-      const data: ApiResponse<BetRecord[]> = await res.json();
+      const data: ApiResponse<BetRecord[]> = await readApiResponse(res);
       if (!data.success || !data.data) return;
       const bets = data.data;
       const settled = bets.filter((b) => b.status === "settled");

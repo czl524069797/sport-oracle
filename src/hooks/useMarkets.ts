@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { GameWithOdds, MarketsResponse, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function useMarkets() {
   const [todayMarkets, setTodayMarkets] = useState<GameWithOdds[]>([]);
@@ -20,7 +21,7 @@ export function useMarkets() {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const res = await fetch(`/api/markets?tz=${encodeURIComponent(tz)}`);
-      const data: ApiResponse<MarketsResponse> = await res.json();
+      const data: ApiResponse<MarketsResponse> = await readApiResponse(res);
       if (data.success && data.data) {
         setTodayMarkets(data.data.today);
         setTomorrowMarkets(data.data.tomorrow);

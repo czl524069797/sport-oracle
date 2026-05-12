@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useAccount } from "wagmi";
 import { useI18n } from "@/i18n";
 import type { StrategyConfig, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function StrategyForm() {
   const { address } = useAccount();
@@ -28,7 +29,7 @@ export function StrategyForm() {
     setFetching(true);
     try {
       const res = await fetch(`/api/strategy?wallet=${address}`);
-      const data: ApiResponse<StrategyConfig[]> = await res.json();
+      const data: ApiResponse<StrategyConfig[]> = await readApiResponse(res);
       if (data.success && data.data) {
         setStrategies(data.data);
         if (data.data.length > 0) setForm(data.data[0]);
@@ -47,7 +48,7 @@ export function StrategyForm() {
       const method = form.id ? "PUT" : "POST";
       const body = form.id ? { id: form.id, ...form } : { ...form, walletAddress: address };
       const res = await fetch("/api/strategy", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      const data = await res.json();
+      const data: ApiResponse<StrategyConfig> = await readApiResponse(res);
       if (data.success) await fetchStrategies();
     } finally { setLoading(false); }
   };

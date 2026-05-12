@@ -1,5 +1,5 @@
 import type { AIAnalysisInput, AIAnalysisResult } from "@/types";
-import { assertAIProviderReady, getAIProviderConfig } from "./ai-provider";
+import { fetchAIChatCompletion } from "./ai-provider";
 
 function buildPrompt(input: AIAnalysisInput): string {
   const { game, homeStats, awayStats, homePlayers, awayPlayers, headToHead, marketPrice } = input;
@@ -234,13 +234,8 @@ export async function analyzeGame(
 ): Promise<AIAnalysisResult> {
   const userPrompt = buildPrompt(input);
   const langSuffix = LANGUAGE_INSTRUCTION[locale] ?? "";
-  const provider = getAIProviderConfig();
-  assertAIProviderReady(provider);
-
-  const url = `${provider.baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
   const requestBody = {
-    model: provider.model,
     messages: [
       { role: "system", content: SYSTEM_PROMPT + langSuffix },
       { role: "user", content: userPrompt },
@@ -250,22 +245,8 @@ export async function analyzeGame(
     stream: false,
   };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${provider.apiKey}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "Unknown error");
-    throw new Error(`AI API error ${res.status}: ${errText}`);
-  }
-
   // Always read as text first, then intelligently parse
-  const rawText = await res.text();
+  const rawText = await fetchAIChatCompletion(requestBody);
   const content = extractContent(rawText);
 
   if (!content) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { EsportsGameKey, FuturesMarket, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function useOverview(category: "nba" | "football" | "esports", esportsGame?: EsportsGameKey) {
   const [markets, setMarkets] = useState<FuturesMarket[]>([]);
@@ -15,7 +16,7 @@ export function useOverview(category: "nba" | "football" | "esports", esportsGam
       const params = new URLSearchParams({ category });
       if (category === "esports" && esportsGame) params.set("game", esportsGame);
       const res = await fetch(`/api/overview?${params.toString()}`);
-      const data: ApiResponse<{ category: string; markets: FuturesMarket[] }> = await res.json();
+      const data: ApiResponse<{ category: string; markets: FuturesMarket[] }> = await readApiResponse(res);
       if (data.success && data.data) {
         setMarkets(data.data.markets);
       } else {

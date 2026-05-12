@@ -52,8 +52,14 @@ export function SkillStatus() {
           if (!cancelled) setSignedIn(false);
           return;
         }
-        const data = await res.json();
-        if (!cancelled) setSignedIn(data.address?.toLowerCase() === address?.toLowerCase());
+        const contentType = res.headers.get("content-type") ?? "";
+        if (!contentType.toLowerCase().includes("application/json")) {
+          if (!cancelled) setSignedIn(false);
+          return;
+        }
+        const text = await res.text();
+        const data = JSON.parse(text) as { address?: string };
+        if (!cancelled) setSignedIn(data?.address?.toLowerCase() === address?.toLowerCase());
       } catch {
         if (!cancelled) setSignedIn(false);
       } finally {

@@ -29,27 +29,11 @@ function getGameStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]):
   return t.markets.gameScheduled;
 }
 
-function formatLocalGameTime(gameDate: string, status: string, dateLocale: string): string {
-  const s = status.toLowerCase().trim();
-  const match = s.match(/(\d{1,2}):(\d{2})\s*(am|pm)\s*et/);
-  if (!match) return status;
-
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const ampm = match[3];
-
-  if (ampm === "pm" && hours !== 12) hours += 12;
-  if (ampm === "am" && hours === 12) hours = 0;
-
-  const datePart = gameDate.split("T")[0];
-  const etDateStr = `${datePart}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
-  const etOffsetDate = new Date(`${etDateStr}-05:00`);
-
-  if (isNaN(etOffsetDate.getTime())) return status;
-
-  return etOffsetDate.toLocaleString(dateLocale, {
+function formatLocalGameTime(gameDate: string, dateLocale: string): string {
+  return new Date(gameDate).toLocaleString(dateLocale, {
     month: "short",
     day: "numeric",
+    weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -69,11 +53,8 @@ export function MarketCard({ matched, onAnalyze, analyzing, analysisSummary }: M
   const awayRecord = game.awayTeam.awayRecord || game.awayTeam.record;
 
   const statusLower = game.status.toLowerCase().trim();
-  const isScheduled = statusLower.includes("pm") || statusLower.includes("am");
   const isLive = statusLower.includes("live") || statusLower.includes("q") || statusLower.includes("half");
-  const gameTime = isScheduled
-    ? formatLocalGameTime(game.gameDate, game.status, dateLocale)
-    : formatGameDate(game.gameDate);
+  const gameTime = formatLocalGameTime(game.gameDate, dateLocale);
 
   return (
     <Card className={`relative overflow-hidden group ${isLive ? "animate-glow-pulse" : ""}`}>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { EsportsGameKey, PolymarketEvent, PolymarketMatch, MatchesResponse, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function usePolymarketEvents(category: "football" | "esports", esportsGame?: EsportsGameKey) {
   const [matches, setMatches] = useState<PolymarketMatch[]>([]);
@@ -15,7 +16,7 @@ export function usePolymarketEvents(category: "football" | "esports", esportsGam
     try {
       const query = category === "esports" && esportsGame ? `?game=${esportsGame}` : "";
       const res = await fetch(`/api/${category}${query}`);
-      const data: ApiResponse<MatchesResponse> = await res.json();
+      const data: ApiResponse<MatchesResponse> = await readApiResponse(res);
       if (data.success && data.data) {
         setMatches(data.data.matches ?? []);
         setEvents(data.data.events ?? []);

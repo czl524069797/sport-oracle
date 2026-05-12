@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { getAuthToken, useSkillAuth } from "@/hooks/useSkillAuth";
 import type { BetRequest, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function useBetting() {
   const { address } = useAccount();
@@ -34,7 +35,7 @@ export function useBetting() {
           ...(address ? { walletAddress: address } : {}),
         }),
       });
-      const data: ApiResponse<{ orderId: string; status: string }> = await res.json();
+      const data: ApiResponse<{ orderId: string; status: string }> = await readApiResponse(res);
       if (data.success && data.data) {
         setResult(data.data);
       } else {

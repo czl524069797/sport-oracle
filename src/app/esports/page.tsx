@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { usePolymarketEvents } from "@/hooks/usePolymarketEvents";
 import { useOverview } from "@/hooks/useOverview";
 import { EventList } from "@/components/events/EventList";
@@ -112,10 +113,16 @@ export default function EsportsPage() {
       </div>
 
       {/* Esports banner */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/15 p-6">
-        <div className="absolute top-1/2 right-8 -translate-y-1/2 opacity-10">
-          <GamepadIcon size={100} />
-        </div>
+      <div className="relative overflow-hidden rounded-xl border border-violet-500/15 p-6">
+        <Image
+          src="/images/sport-oracle-main-realistic-2026-05-12.png"
+          alt=""
+          fill
+          unoptimized
+          className="object-cover object-center opacity-35"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(21,10,37,0.92),rgba(21,10,37,0.62),rgba(21,10,37,0.82))]" />
         <div className="relative z-10 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400">
             <GamepadIcon size={28} />

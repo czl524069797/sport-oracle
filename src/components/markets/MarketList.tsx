@@ -116,13 +116,8 @@ export function MarketList({
     );
   }
 
-  const todayTitle = labels.todayLabel
-    ? `${t.markets.todayLabel} (${t.markets.etDate} ${labels.todayLabel.replace("ET ", "")})`
-    : t.markets.todayGames;
-
-  const tomorrowTitle = labels.tomorrowLabel
-    ? `${t.markets.tomorrowLabel} (${t.markets.etDate} ${labels.tomorrowLabel.replace("ET ", "")})`
-    : t.markets.tomorrowGames;
+  const todayTitle = t.markets.todayGames;
+  const tomorrowTitle = t.markets.tomorrowGames;
 
   return (
     <div className="space-y-8">

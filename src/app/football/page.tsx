@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { usePolymarketEvents } from "@/hooks/usePolymarketEvents";
 import { useOverview } from "@/hooks/useOverview";
 import { EventList } from "@/components/events/EventList";
@@ -85,10 +86,16 @@ export default function FootballPage() {
       </div>
 
       {/* World Cup banner */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500/10 via-green-500/5 to-emerald-500/10 border border-emerald-500/15 p-6">
-        <div className="absolute top-1/2 right-8 -translate-y-1/2 opacity-10">
-          <FootballIcon size={100} />
-        </div>
+      <div className="relative overflow-hidden rounded-xl border border-emerald-500/15 p-6">
+        <Image
+          src="/images/generated/sport-oracle-football-2026-05-12.png"
+          alt=""
+          fill
+          unoptimized
+          className="object-cover object-center opacity-45"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,20,18,0.92),rgba(5,20,18,0.62),rgba(5,20,18,0.82))]" />
         <div className="relative z-10 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
             <FootballIcon size={28} />

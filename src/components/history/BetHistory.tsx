@@ -7,6 +7,7 @@ import { useAccount } from "wagmi";
 import { formatUSD, formatPercent } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import type { BetRecord, ApiResponse } from "@/types";
+import { readApiResponse } from "@/lib/api-response";
 
 export function BetHistory() {
   const { address } = useAccount();
@@ -22,7 +23,7 @@ export function BetHistory() {
     setLoading(true);
     try {
       const res = await fetch(`/api/betting?wallet=${address}`);
-      const data: ApiResponse<BetRecord[]> = await res.json();
+      const data: ApiResponse<BetRecord[]> = await readApiResponse(res);
       if (data.success && data.data) setBets(data.data);
     } finally { setLoading(false); }
   }, [address]);
